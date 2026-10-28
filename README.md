@@ -93,6 +93,37 @@ npm start
 
 ---
 
+## 🌐 bot-hosting.net (Pterodactyl Panel) Kurulum Rehberi
+
+Botunuz **[bot-hosting.net](https://bot-hosting.net)** ile tam uyumlu hale getirilmiştir. Pterodactyl panelinde 7/24 kesintisiz çalıştırmak için şu adımları izleyin:
+
+1. **GitHub ile Bağlama veya Dosyaları Yükleme:**
+   - Panelde yeni bir Node.js sunucusu oluşturun.
+   - GitHub deponuzu (`https://github.com/ArtoMoon/asgard-discord-bot`) doğrudan bağlayabilir veya dosyaları zip olarak File Manager'a yükleyebilirsiniz.
+
+2. **Giriş Dosyası (Startup / Main File):**
+   - Startup ayarlarında **Main File** veya **Entry Point**: `index.js` olarak belirlenmiştir.
+
+3. **Veri Tabanı (ÖNEMLİ):**
+   - `bot-hosting.net` üzerinde yerel `127.0.0.1` MongoDB bulunmaz.
+   - [MongoDB Atlas](https://www.mongodb.com/atlas) üzerinden ücretsiz bir küme (Cluster) açıp bağlantı adresinizi (`mongodb+srv://...`) alın.
+
+4. **Çevre Değişkenleri (Startup / Variables):**
+   Paneldeki **"Startup"** sekmesinden veya **File Manager**'da oluşturacağınız `.env` dosyasında şu değişkenleri tanımlayın:
+   - `DISCORD_TOKEN`: Bot tokenınız
+   - `CLIENT_ID`: Bot uygulama ID'niz
+   - `GUILD_ID`: Sunucu ID'niz
+   - `MONGODB_URI`: MongoDB Atlas bağlantı linkiniz (`mongodb+srv://...`)
+   - `DEVELOPER_IDS`: Kendi Discord kullanıcı ID'niz
+   - `PORT`: `8080` (veya panelin atadığı port)
+
+5. **7/24 Uptime (Keep-Alive):**
+   - Bot, `8080` portunda yerleşik bir HTTP Web Sunucusu çalıştırır.
+   - Panelde verilen portu ve IP adresini [UptimeRobot](https://uptimerobot.com) gibi bir servise HTTP monitörü olarak ekleyerek botunuzun uyumasını önleyebilir, 7/24 aktif kalmasını sağlayabilirsiniz.
+
+
+---
+
 ## 📜 Komut Listesi
 
 | Komut | Alternatif Prefix | Açıklama |

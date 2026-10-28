@@ -44,7 +44,7 @@ module.exports = {
         if (!existingRole) {
           existingRole = await guild.roles.create({
             name: rankDef.roleName,
-            color: rankDef.color,
+            colors: { primaryColor: rankDef.color },
             hoist: true,
             reason: 'Asgard Otomatik Rütbe Kurulumu'
           });
@@ -70,7 +70,7 @@ module.exports = {
       if (!unverifiedRole) {
         unverifiedRole = await guild.roles.create({
           name: 'Kayıtsız',
-          color: '#7f8c8d',
+          colors: { primaryColor: '#7f8c8d' },
           reason: 'Asgard Kayıt Sistemi'
         });
         createdRoles.push(`📜 ${unverifiedRole.name}`);
@@ -83,7 +83,7 @@ module.exports = {
       if (!memberRole) {
         memberRole = await guild.roles.create({
           name: 'Asgard Halkı',
-          color: '#2ecc71',
+          colors: { primaryColor: '#2ecc71' },
           reason: 'Asgard Kayıtlı Üye Rolü'
         });
         createdRoles.push(`👥 ${memberRole.name}`);
@@ -95,7 +95,7 @@ module.exports = {
       if (!jailRole) {
         jailRole = await guild.roles.create({
           name: 'Cezalı / Jail',
-          color: '#111111',
+          colors: { primaryColor: '#111111' },
           reason: 'Asgard Moderasyon Jail Rolü'
         });
         createdRoles.push(`⛓️ ${jailRole.name}`);
@@ -107,7 +107,7 @@ module.exports = {
       if (!staffRole) {
         staffRole = await guild.roles.create({
           name: 'Asgard Muhafız Konseyi',
-          color: '#e74c3c',
+          colors: { primaryColor: '#e74c3c' },
           reason: 'Asgard Yetkili Rolü'
         });
         createdRoles.push(`🛡️ ${staffRole.name}`);
