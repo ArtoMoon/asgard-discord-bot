@@ -70,7 +70,8 @@ module.exports = {
 
         const earnedXp = Math.floor(Math.random() * 11) + 15; // 15-25 XP
 
-        const oldLevel = profile.level || RankManager.calculateLevel(profile.totalXp);
+        // Eski seviyeyi her zaman mevcut totalXp üzerinden doğru hesapla
+        const oldLevel = RankManager.calculateLevel(profile.totalXp);
         profile.messageCount += 1;
         profile.totalXp += earnedXp;
         profile.weekly.messages += 1;

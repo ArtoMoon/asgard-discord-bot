@@ -109,7 +109,7 @@ module.exports = {
       }
 
       // ==========================================
-      // 2. VOICE XP ENGINE
+      // 2. VOICE SESSION TRACKING (XP ready.js üzerinden her 5 dakikada bir güvenli verilir)
       // ==========================================
       let profile = await UserProfile.findOne({ guildId: guild.id, userId: member.id });
       if (!profile) {
@@ -123,54 +123,8 @@ module.exports = {
       }
       // User left voice channel
       else if (oldState.channelId && !newState.channelId) {
-        if (profile.voiceJoinedAt) {
-          const now = Date.now();
-          const joinedTime = new Date(profile.voiceJoinedAt).getTime();
-          const elapsedMinutes = Math.floor((now - joinedTime) / 60000);
-
-          if (elapsedMinutes >= 1) {
-            const earnedXp = elapsedMinutes * 5; // 5 XP per minute
-
-            profile.voiceMinutes += elapsedMinutes;
-            profile.totalXp += earnedXp;
-            profile.weekly.voiceMinutes += elapsedMinutes;
-            profile.weekly.xp += earnedXp;
-
-            // Check rank up
-            const eligible = RankManager.calculateEligibleRank(profile.weekly);
-            if (eligible.rank > profile.currentRank) {
-              const oldRank = RankManager.getRankByLevel(profile.currentRank);
-              profile.currentRank = eligible.rank;
-
-              const rankConfig = settings.ranks.find(r => r.rank === eligible.rank);
-              if (rankConfig && rankConfig.roleId) {
-                const role = guild.roles.cache.get(rankConfig.roleId);
-                if (role) {
-                  await member.roles.add(role).catch(() => null);
-                }
-              }
-
-              // Send rank up embed to log channel
-              if (settings.rankLogChannelId) {
-                const rankUpEmbed = new EmbedBuilder()
-                  .setColor(eligible.color || config.colors.gold)
-                  .setTitle('⚔️ ASGARD DİYARINDA SESLİ YÜKSELİŞ!')
-                  .setDescription(`Tebrikler ${member}! Ses kanallarındaki aktifliğinle rütbe atladın!\n\n` +
-                    `🛡️ **Eski Rütbe:** ${oldRank.name}\n` +
-                    `👑 **Yeni Rütbe:** ${eligible.name} (Rütbe ${eligible.rank})\n\n` +
-                    `🎙️ **Toplam Ses Süresi:** ${profile.voiceMinutes} dakika\n` +
-                    `🎁 **Açılan Ayrıcalıklar:**\n${eligible.perks.map(p => `• ${p}`).join('\n')}`)
-                  .setFooter({ text: 'Asgard Krallığı Rütbe Sistemi', iconURL: guild.iconURL() })
-                  .setTimestamp();
-
-                await Logger.sendGuildLog(guild, settings.rankLogChannelId, rankUpEmbed);
-              }
-            }
-          }
-
-          profile.voiceJoinedAt = null;
-          await profile.save();
-        }
+        profile.voiceJoinedAt = null;
+        await profile.save();
       }
     } catch (err) {
       Logger.error('voiceStateUpdate işleminde hata:', err);

@@ -56,7 +56,7 @@ module.exports = {
                   profile = new UserProfile({ guildId: guild.id, userId: memberId });
                 }
 
-                const oldLevel = profile.level || RankManager.calculateLevel(profile.totalXp);
+                const oldLevel = RankManager.calculateLevel(profile.totalXp);
                 // Add 5 minutes and 25 Voice XP
                 profile.voiceMinutes += 5;
                 profile.totalXp += 25;

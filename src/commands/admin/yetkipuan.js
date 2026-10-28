@@ -36,6 +36,11 @@ module.exports = {
       sub.setName('terfi')
         .setDescription('Bir yetkiliyi doğrudan 1 üst Asgard Yönetim Kademesine terfi ettirir.')
         .addUserOption(opt => opt.setName('kullanici').setDescription('Terfi ettirilecek yetkili').setRequired(true))
+    )
+    .addSubcommand(sub =>
+      sub.setName('sifirla')
+        .setDescription('Bir kullanıcının seviye/XP veya yetkili puanını sıfırlar.')
+        .addUserOption(opt => opt.setName('kullanici').setDescription('Sıfırlanacak kullanıcı').setRequired(true))
     ),
 
   async execute({ client, message, interaction, isSlash, guild, member, user, channel, args, reply }) {
@@ -65,14 +70,15 @@ module.exports = {
       reason = interaction.options.getString('sebep') || 'Üst Yönetim Değerlendirmesi';
     } else {
       const sub = (args[0] || '').toLowerCase();
-      if (!['baslat', 'ekle', 'cikar', 'terfi'].includes(sub) || !args[1]) {
+      if (!['baslat', 'ekle', 'cikar', 'terfi', 'sifirla'].includes(sub) || !args[1]) {
         return reply({
           content:
             `❌ **Kullanım:**\n` +
             `• \`!ypuan baslat @üye\` → Üyeyi 1. Kademe Yetkili (Thrall) olarak kadroya alır.\n` +
             `• \`!ypuan ekle @yetkili <puan> [sebep]\` → Yetkiliye ödül puanı verir.\n` +
             `• \`!ypuan cikar @yetkili <puan> [sebep]\` → Yetkiliden puan düşer.\n` +
-            `• \`!ypuan terfi @yetkili\` → Yetkiliyi doğrudan 1 üst kademeye terfi ettirir.`
+            `• \`!ypuan terfi @yetkili\` → Yetkiliyi doğrudan 1 üst kademeye terfi ettirir.\n` +
+            `• \`!ypuan sifirla @üye\` → Kullanıcının birikmiş test XP/Seviye verisini sıfırlar.`
         });
       }
       action = sub;
@@ -94,6 +100,20 @@ module.exports = {
     }
     if (!profile.staff) {
       profile.staff = { isStaff: false, rank: 1, points: 0, registrations: 0, punishments: 0, voiceMinutes: 0, messages: 0, bonusPoints: 0 };
+    }
+
+    // 0. SIFIRLAMA (TEST XP / SEVİYE SIFIRLAMA)
+    if (action === 'sifirla') {
+      profile.totalXp = 0;
+      profile.level = 1;
+      profile.messageCount = 0;
+      profile.voiceMinutes = 0;
+      profile.voiceJoinedAt = null;
+      await profile.save();
+
+      return reply({
+        content: `✅ **${targetMember}** kullanıcısının seviye ve XP verileri **Seviye 1 (0 XP)** olarak sıfırlandı!`
+      });
     }
 
     // 1. KADROYA BAŞLATMA (THRALL - STAJYER YETKİLİ)
