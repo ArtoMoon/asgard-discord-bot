@@ -501,12 +501,30 @@ const server = http.createServer(async (req, res) => {
         let settings = await GuildSettings.findOne({ guildId });
         if (!settings) settings = new GuildSettings({ guildId });
 
-        // 1. Level Milestones (10, 20, 30, 40, 50)
+        // Yardımcı: Rol bulucu (Önce kayıtlı ID, sonra tam isim, sonra anahtar kelime)
+        const findRoleInList = (list, savedId, namesToMatch = [], keyword = null) => {
+          if (savedId) {
+            const byId = list.find(r => r.id === savedId);
+            if (byId) return byId;
+          }
+          const lowerNames = namesToMatch.map(n => n.toLowerCase().trim());
+          let found = list.find(r => lowerNames.includes(r.name.toLowerCase().trim()));
+          if (!found && keyword) {
+            const kw = keyword.toLowerCase().trim();
+            found = list.find(r => r.name.toLowerCase().includes(kw));
+          }
+          return found || null;
+        };
+
+        // 1. Level Milestones (5, 10, 20, 30, 40, 50)
         const createdOrLinkedLevelRoles = [];
         for (const m of LEVEL_MILESTONES) {
-          let role = existingRoles.find(r =>
-            r.name.toLowerCase() === m.roleName.toLowerCase() ||
-            r.name.toLowerCase() === m.name.toLowerCase()
+          const savedLvl = (settings.levelRoles || []).find(lr => lr.level === m.level);
+          let role = findRoleInList(
+            existingRoles,
+            savedLvl?.roleId,
+            [m.roleName, m.name, `Seviye ${m.level}`, `Level ${m.level}`],
+            `seviye ${m.level}`
           );
 
           if (!role) {
@@ -530,14 +548,18 @@ const server = http.createServer(async (req, res) => {
         }
         settings.levelRoles = createdOrLinkedLevelRoles;
 
+        const rankKeywords = ['thrall', 'karl', 'berserker', 'hersir', 'thegn', 'jarl', 'einherjar', 'valkyrie', 'aesir', 'odin'];
         for (const rankDef of ASGARD_RANKS) {
-          let role = existingRoles.find(r =>
-            r.name.toLowerCase() === rankDef.roleName.toLowerCase() ||
-            r.name.toLowerCase() === rankDef.name.toLowerCase()
+          const savedRank = (settings.ranks || []).find(r => r.rank === rankDef.rank);
+          const kw = rankKeywords[rankDef.rank - 1] || rankDef.name.split(' ')[0];
+          let role = findRoleInList(
+            existingRoles,
+            savedRank?.roleId,
+            [rankDef.roleName, rankDef.name, `Asgard - ${rankDef.name.split(' ')[0]}`],
+            kw
           );
 
           if (!role) {
-            // Create role via Discord REST API
             const hexColor = parseInt(rankDef.color.replace('#', ''), 16);
             role = await discordApiFetch(`/guilds/${guildId}/roles`, 'POST', {
               name: rankDef.roleName,
@@ -585,14 +607,49 @@ const server = http.createServer(async (req, res) => {
         let settings = await GuildSettings.findOne({ guildId });
         if (!settings) settings = new GuildSettings({ guildId });
 
-        // 1. 10 Asgard Ranks
+        const findRoleInList = (list, savedId, namesToMatch = [], keyword = null) => {
+          if (savedId) {
+            const byId = list.find(r => r.id === savedId);
+            if (byId) return byId;
+          }
+          const lowerNames = namesToMatch.map(n => n.toLowerCase().trim());
+          let found = list.find(r => lowerNames.includes(r.name.toLowerCase().trim()));
+          if (!found && keyword) {
+            const kw = keyword.toLowerCase().trim();
+            found = list.find(r => r.name.toLowerCase().includes(kw));
+          }
+          return found || null;
+        };
+
+        const findChannelInList = (list, savedId, exactName, keyword, type = null) => {
+          if (savedId) {
+            const byId = list.find(c => c.id === savedId && (type === null || c.type === type));
+            if (byId) return byId;
+          }
+          let found = list.find(c =>
+            (type === null || c.type === type) &&
+            c.name.toLowerCase().trim() === exactName.toLowerCase().trim()
+          );
+          if (!found && keyword) {
+            const kw = keyword.toLowerCase().trim();
+            found = list.find(c =>
+              (type === null || c.type === type) &&
+              c.name.toLowerCase().includes(kw)
+            );
+          }
+          return found || null;
+        };
+
+        // 1. Level Milestones (5, 10, 20, 30, 40, 50)
         const rankMappings = [];
-        // 1. Level Milestones (10, 20, 30, 40, 50)
         const createdOrLinkedLevelRoles = [];
         for (const m of LEVEL_MILESTONES) {
-          let role = existingRoles.find(r =>
-            r.name.toLowerCase() === m.roleName.toLowerCase() ||
-            r.name.toLowerCase() === m.name.toLowerCase()
+          const savedLvl = (settings.levelRoles || []).find(lr => lr.level === m.level);
+          let role = findRoleInList(
+            existingRoles,
+            savedLvl?.roleId,
+            [m.roleName, m.name, `Seviye ${m.level}`, `Level ${m.level}`],
+            `seviye ${m.level}`
           );
 
           if (!role) {
@@ -616,10 +673,15 @@ const server = http.createServer(async (req, res) => {
         }
         settings.levelRoles = createdOrLinkedLevelRoles;
 
+        const rankKeywords = ['thrall', 'karl', 'berserker', 'hersir', 'thegn', 'jarl', 'einherjar', 'valkyrie', 'aesir', 'odin'];
         for (const rankDef of ASGARD_RANKS) {
-          let role = existingRoles.find(r =>
-            r.name.toLowerCase() === rankDef.roleName.toLowerCase() ||
-            r.name.toLowerCase() === rankDef.name.toLowerCase()
+          const savedRank = (settings.ranks || []).find(r => r.rank === rankDef.rank);
+          const kw = rankKeywords[rankDef.rank - 1] || rankDef.name.split(' ')[0];
+          let role = findRoleInList(
+            existingRoles,
+            savedRank?.roleId,
+            [rankDef.roleName, rankDef.name, `Asgard - ${rankDef.name.split(' ')[0]}`],
+            kw
           );
           if (!role) {
             const hexColor = parseInt(rankDef.color.replace('#', ''), 16);
@@ -634,32 +696,34 @@ const server = http.createServer(async (req, res) => {
         settings.ranks = rankMappings;
 
         // 2. System Roles (Kayıtsız, Üye, Jail, Staff)
-        let unverified = existingRoles.find(r => r.name === 'Kayıtsız');
+        let unverified = findRoleInList(existingRoles, settings.unverifiedRoleId || settings.autoRoleId, ['Kayıtsız', 'Kayitsiz'], 'kayıtsız');
         if (!unverified) {
           unverified = await discordApiFetch(`/guilds/${guildId}/roles`, 'POST', { name: 'Kayıtsız', color: 0x7f8c8d });
         }
         settings.unverifiedRoleId = unverified.id;
         settings.autoRoleId = unverified.id;
 
-        let memberRole = existingRoles.find(r => r.name === 'Asgard Halkı');
+        let memberRole = findRoleInList(existingRoles, settings.registeredRoleId, ['Asgard Halkı', 'Üye'], 'asgard halkı');
         if (!memberRole) {
           memberRole = await discordApiFetch(`/guilds/${guildId}/roles`, 'POST', { name: 'Asgard Halkı', color: 0x2ecc71 });
         }
         settings.registeredRoleId = memberRole.id;
 
-        let jailRole = existingRoles.find(r => r.name === 'Cezalı / Jail');
+        let jailRole = findRoleInList(existingRoles, settings.jailRoleId, ['Cezalı / Jail', 'Cezalı', 'Jail'], 'jail');
         if (!jailRole) {
           jailRole = await discordApiFetch(`/guilds/${guildId}/roles`, 'POST', { name: 'Cezalı / Jail', color: 0x111111 });
         }
         settings.jailRoleId = jailRole.id;
 
         // 3. Channels & Categories
-        let adminCat = existingChannels.find(c => c.type === 4 && c.name === '📜 ASGARD YÖNETİM & KAYIT');
+        let adminCat = findChannelInList(existingChannels, null, '📜 ASGARD YÖNETİM & KAYIT', 'yönetim & kayıt', 4)
+          || findChannelInList(existingChannels, null, '📜 ASGARD YÖNETİM & KAYIT', 'asgard yönetim', 4);
         if (!adminCat) {
           adminCat = await discordApiFetch(`/guilds/${guildId}/channels`, 'POST', { name: '📜 ASGARD YÖNETİM & KAYIT', type: 4 });
         }
 
-        let welcomeCh = existingChannels.find(c => c.name === '💬・hoş-geldin');
+        let welcomeCh = findChannelInList(existingChannels, settings.welcomeChannelId, '💬・hoş-geldin', 'hoş-geldin', 0)
+          || findChannelInList(existingChannels, null, 'hos-geldin', 'hosgeldin', 0);
         if (!welcomeCh) {
           welcomeCh = await discordApiFetch(`/guilds/${guildId}/channels`, 'POST', {
             name: '💬・hoş-geldin',
@@ -669,7 +733,7 @@ const server = http.createServer(async (req, res) => {
         }
         settings.welcomeChannelId = welcomeCh.id;
 
-        let approvalCh = existingChannels.find(c => c.name === '👑・developer-onay');
+        let approvalCh = findChannelInList(existingChannels, settings.approvalChannelId, '👑・developer-onay', 'developer-onay', 0);
         if (!approvalCh) {
           approvalCh = await discordApiFetch(`/guilds/${guildId}/channels`, 'POST', {
             name: '👑・developer-onay',
@@ -679,7 +743,7 @@ const server = http.createServer(async (req, res) => {
         }
         settings.approvalChannelId = approvalCh.id;
 
-        let modLogCh = existingChannels.find(c => c.name === '🛡️・mod-log');
+        let modLogCh = findChannelInList(existingChannels, settings.modLogChannelId, '🛡️・mod-log', 'mod-log', 0);
         if (!modLogCh) {
           modLogCh = await discordApiFetch(`/guilds/${guildId}/channels`, 'POST', {
             name: '🛡️・mod-log',
@@ -689,7 +753,8 @@ const server = http.createServer(async (req, res) => {
         }
         settings.modLogChannelId = modLogCh.id;
 
-        let rankLogCh = existingChannels.find(c => c.name === '⚔️・rütbe-log');
+        let rankLogCh = findChannelInList(existingChannels, settings.rankLogChannelId, '⚔️・rütbe-log', 'rütbe-log', 0)
+          || findChannelInList(existingChannels, null, 'rutbe-log', 'rutbe-log', 0);
         if (!rankLogCh) {
           rankLogCh = await discordApiFetch(`/guilds/${guildId}/channels`, 'POST', {
             name: '⚔️・rütbe-log',
@@ -699,7 +764,7 @@ const server = http.createServer(async (req, res) => {
         }
         settings.rankLogChannelId = rankLogCh.id;
 
-        let levelLogCh = existingChannels.find(c => c.name === '📊・seviye-log');
+        let levelLogCh = findChannelInList(existingChannels, settings.levelLogChannelId, '📊・seviye-log', 'seviye-log', 0);
         if (!levelLogCh) {
           levelLogCh = await discordApiFetch(`/guilds/${guildId}/channels`, 'POST', {
             name: '📊・seviye-log',
@@ -710,13 +775,15 @@ const server = http.createServer(async (req, res) => {
         settings.levelLogChannelId = levelLogCh.id;
 
         // Voice Category & Join-to-Create
-        let voiceCat = existingChannels.find(c => c.type === 4 && c.name === '🔊 ASGARD SES ODALARI');
+        let voiceCat = findChannelInList(existingChannels, settings.tempVoiceCategoryId, '🔊 ASGARD SES ODALARI', 'ses odaları', 4)
+          || findChannelInList(existingChannels, null, '🔊 ASGARD SES ODALARI', 'asgard ses', 4);
         if (!voiceCat) {
           voiceCat = await discordApiFetch(`/guilds/${guildId}/channels`, 'POST', { name: '🔊 ASGARD SES ODALARI', type: 4 });
         }
         settings.tempVoiceCategoryId = voiceCat.id;
 
-        let j2cCh = existingChannels.find(c => c.type === 2 && c.name === '➕ Ses Odası Oluştur');
+        let j2cCh = findChannelInList(existingChannels, settings.joinToCreateChannelId, '➕ Ses Odası Oluştur', 'ses odası oluştur', 2)
+          || findChannelInList(existingChannels, null, 'Oda Oluştur', 'oda oluştur', 2);
         if (!j2cCh) {
           j2cCh = await discordApiFetch(`/guilds/${guildId}/channels`, 'POST', {
             name: '➕ Ses Odası Oluştur',
