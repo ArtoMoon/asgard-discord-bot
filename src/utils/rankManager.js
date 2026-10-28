@@ -184,14 +184,13 @@ class RankManager {
 
   static calculateLevel(totalXp) {
     if (!totalXp || totalXp <= 0) return 1;
-    // Seviye 2 = 100 XP, Seviye 3 = 400 XP, Seviye 5 = 1600 XP, Seviye 10 = 8100 XP
-    const level = Math.floor(Math.sqrt(totalXp / 100)) + 1;
+    const level = Math.floor(Math.sqrt(totalXp / 50)) + 1;
     return Math.max(1, Math.min(50, level));
   }
 
   static xpForLevel(level) {
     if (level <= 1) return 0;
-    return Math.pow(level - 1, 2) * 100;
+    return Math.pow(level - 1, 2) * 50;
   }
 
   static getMilestoneForLevel(level) {

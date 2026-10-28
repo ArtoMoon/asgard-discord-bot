@@ -39,8 +39,8 @@ module.exports = {
     )
     .addSubcommand(sub =>
       sub.setName('sifirla')
-        .setDescription('Bir kullanıcının seviye/XP veya yetkili puanını sıfırlar.')
-        .addUserOption(opt => opt.setName('kullanici').setDescription('Sıfırlanacak kullanıcı').setRequired(true))
+        .setDescription('Bir yetkilinin sadece yetkili puanını ve icraatlarını sıfırlar (Leveline dokunmaz).')
+        .addUserOption(opt => opt.setName('kullanici').setDescription('Yetkili puanı sıfırlanacak yetkili').setRequired(true))
     ),
 
   async execute({ client, message, interaction, isSlash, guild, member, user, channel, args, reply }) {
@@ -78,7 +78,7 @@ module.exports = {
             `• \`!ypuan ekle @yetkili <puan> [sebep]\` → Yetkiliye ödül puanı verir.\n` +
             `• \`!ypuan cikar @yetkili <puan> [sebep]\` → Yetkiliden puan düşer.\n` +
             `• \`!ypuan terfi @yetkili\` → Yetkiliyi doğrudan 1 üst kademeye terfi ettirir.\n` +
-            `• \`!ypuan sifirla @üye\` → Kullanıcının birikmiş test XP/Seviye verisini sıfırlar.`
+            `• \`!ypuan sifirla @yetkili\` → Sadece yetkilinin görev/icraat puanlarını sıfırlar.`
         });
       }
       action = sub;
@@ -102,17 +102,22 @@ module.exports = {
       profile.staff = { isStaff: false, rank: 1, points: 0, registrations: 0, punishments: 0, voiceMinutes: 0, messages: 0, bonusPoints: 0 };
     }
 
-    // 0. SIFIRLAMA (TEST XP / SEVİYE SIFIRLAMA)
+    // 0. SADECE YETKİLİ PUANI SIFIRLAMA (Level/XP'ye dokunmaz!)
     if (action === 'sifirla') {
-      profile.totalXp = 0;
-      profile.level = 1;
-      profile.messageCount = 0;
-      profile.voiceMinutes = 0;
-      profile.voiceJoinedAt = null;
+      profile.staff = {
+        isStaff: profile.staff?.isStaff || false,
+        rank: 1,
+        points: 0,
+        registrations: 0,
+        punishments: 0,
+        voiceMinutes: 0,
+        messages: 0,
+        bonusPoints: 0
+      };
       await profile.save();
 
       return reply({
-        content: `✅ **${targetMember}** kullanıcısının seviye ve XP verileri **Seviye 1 (0 XP)** olarak sıfırlandı!`
+        content: `✅ **${targetMember}** adlı yetkilinin **Yetkili Puanı ve İcraatları** sıfırlandı! *(Üye Level/XP verisine dokunulmadı).*`
       });
     }
 
