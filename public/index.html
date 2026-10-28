@@ -376,17 +376,17 @@
         </div>
       </div>
 
-      <!-- Section 1: Milestone Level Roles (10, 20, 30, 40, 50 MAX) -->
+      <!-- Section 1: Member Level Roles (10, 20, 30, 40, 50 MAX) -->
       <div class="space-y-3">
         <div class="flex items-center justify-between pb-2 border-b border-cardBorder">
           <div>
             <h4 class="text-sm font-bold text-white flex items-center gap-2">
               <i class="fa-solid fa-gift text-yellow-400"></i>
-              Her 10 Seviyede Rol &amp; Yetki Sistemi (10, 20, 30, 40, 50 MAX)
+              Üye Seviye &amp; İzin Rolleri (10, 20, 30, 40, 50 MAX)
             </h4>
-            <p class="text-xs text-gray-400">Üyelerin sohbette ve seste XP kazanarak Seviye 10, 20, 30, 40 ve 50'ye ulaştıklarında kazanacakları GIF, Resim, Link ve Yayın rolleri.</p>
+            <p class="text-xs text-gray-400">Normal üyelerin sohbette ve seste XP kazanarak Seviye 10, 20, 30, 40 ve 50'de kazandığı GIF, Resim, Link, Yayın ve VIP izinleri.</p>
           </div>
-          <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-yellow-500/20 text-yellow-300 border border-yellow-500/30">5 SEVİYE ROLÜ</span>
+          <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-yellow-500/20 text-yellow-300 border border-yellow-500/30">ÜYE SEVİYE SİSTEMİ</span>
         </div>
         <div id="levelRolesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <div class="col-span-full py-4 text-center text-gray-400 text-xs">
@@ -395,17 +395,17 @@
         </div>
       </div>
 
-      <!-- Section 2: 10 Asgard Ranks (1-10) -->
+      <!-- Section 2: 10 Asgard Management Roles (1-10) -->
       <div class="space-y-3 pt-6 border-t border-cardBorder">
         <div class="flex items-center justify-between pb-2 border-b border-cardBorder">
           <div>
             <h4 class="text-sm font-bold text-white flex items-center gap-2">
-              <i class="fa-solid fa-crown text-purple-400"></i>
-              10 Asgard Rütbesi (1'den 10'a Kadar Tüm Rütbe Rolleri)
+              <i class="fa-solid fa-shield-halved text-purple-400"></i>
+              10 Asgard Yönetim &amp; Yetkili Kademesi (1'den 10'a Moderasyon Rolleri)
             </h4>
-            <p class="text-xs text-gray-400">Thrall, Karl, Berserker, Hersir, Thegn, Jarl, Einherjar, Valkyrie, Aesir ve Odin's Champion rütbeleri.</p>
+            <p class="text-xs text-gray-400">Sunucu yönetim kadrosu: Stajyer, Asistan, Deneme Mod, Chat Mod, Ses Mod, Kıdemli Mod, Şef Mod, Asistan Yönetici, Konsey ve Baş Yönetici kademeleri.</p>
           </div>
-          <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30">10 ASGARD RÜTBESİ</span>
+          <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30">10 YÖNETİM RÜTBESİ</span>
         </div>
         <div id="asgardRanksGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div class="col-span-full py-4 text-center text-gray-400 text-xs">
@@ -1323,16 +1323,16 @@
       if (!container) return;
 
       const defaultAsgardRanks = [
-        { rank: 1, name: 'Thrall (Yeni Savaşçı)', color: '#95a5a6', requiredWeeklyXp: 0, perks: ['Genel Sohbet & Sesli Kanallara Erişim'] },
-        { rank: 2, name: 'Karl (Özgür Üye)', color: '#3498db', requiredWeeklyXp: 500, perks: ['Görsel & Resim Gönderme', 'Özel Kanallar'] },
-        { rank: 3, name: 'Berserker (Yırtıcı)', color: '#e67e22', requiredWeeklyXp: 1200, perks: ['Harici Emoji & Sticker', 'GIF Paylaşabilme'] },
-        { rank: 4, name: 'Hersir (Akıncı)', color: '#2ecc71', requiredWeeklyXp: 2200, perks: ['Bağlantı (Link) Paylaşabilme'] },
-        { rank: 5, name: 'Thegn (Muhafız)', color: '#1abc9c', requiredWeeklyXp: 3500, perks: ['Yayında 1080p/60FPS Açabilme'] },
-        { rank: 6, name: 'Jarl (Soylu Savaşçı)', color: '#9b59b6', requiredWeeklyXp: 5000, perks: ['Çekilişlerde 2x Şans', 'Kamera Önceliği'] },
-        { rank: 7, name: 'Einherjar (Valhalla Seçilmişi)', color: '#e74c3c', requiredWeeklyXp: 7000, perks: ['Öncelikli Konuşmacı', 'Valhalla Özel Sohbet'] },
-        { rank: 8, name: 'Valkyrie (Kader Rehberi)', color: '#fd79a8', requiredWeeklyXp: 9500, perks: ['Çekilişlerde 3x Şans', 'Sesli Oda Yönetimi'] },
-        { rank: 9, name: 'Aesir (Tanrılar Meclisi)', color: '#f39c12', requiredWeeklyXp: 13000, perks: ['Rehberlik Rozeti', 'Özel VIP Ses Odası'] },
-        { rank: 10, name: 'Odin\'s Champion (Asgard Şampiyonu)', color: '#f1c40f', requiredWeeklyXp: 18000, perks: ['Tüm Ayrıcalıklar Açık', 'Efsanevi Asgard Tacı', 'VIP Destek'] }
+        { rank: 1, name: 'Thrall (Stajyer Yetkili)', color: '#95a5a6', requiredWeeklyXp: 0, perks: ['Yeni Üye Kayıt Yetkisi (!kayit)', 'Rehberlik'] },
+        { rank: 2, name: 'Karl (Asistan Yetkili)', color: '#3498db', requiredWeeklyXp: 500, perks: ['Sohbet Düzeni & Uyarı', 'Yetkili Sohbetine Erişim'] },
+        { rank: 3, name: 'Berserker (Deneme Moderatör)', color: '#e67e22', requiredWeeklyXp: 1200, perks: ['Kullanıcı Susturma (!timeout)', 'Mesaj Temizleme'] },
+        { rank: 4, name: 'Hersir (Sohbet Moderatörü)', color: '#2ecc71', requiredWeeklyXp: 2200, perks: ['Cezalıya Atma (!jail)', 'Metin Kanalları Moderasyonu'] },
+        { rank: 5, name: 'Thegn (Ses Moderatörü)', color: '#1abc9c', requiredWeeklyXp: 3500, perks: ['Ses Odalarında Taşıma & Susturma', 'Oda Yönetimi'] },
+        { rank: 6, name: 'Jarl (Kıdemli Moderatör)', color: '#9b59b6', requiredWeeklyXp: 5000, perks: ['Üye Atma (Kick Yetkisi)', 'Yetki Talep Açma (/yetki-ver)'] },
+        { rank: 7, name: 'Einherjar (Şef Moderatör)', color: '#e74c3c', requiredWeeklyXp: 7000, perks: ['Moderatör Ekibi Denetimi', 'Audit Log Takibi'] },
+        { rank: 8, name: 'Valkyrie (Asistan Yönetici)', color: '#fd79a8', requiredWeeklyXp: 9500, perks: ['Yasaklama (Ban Yetkisi)', 'Kanal Düzeni & İzin Kontrolü'] },
+        { rank: 9, name: 'Aesir (Konsey Yöneticisi)', color: '#f39c12', requiredWeeklyXp: 13000, perks: ['Tüm Moderasyon Komutları', 'Etkinlik & Ceza İptalleri'] },
+        { rank: 10, name: 'Odin\'s Champion (Baş Yönetici)', color: '#f1c40f', requiredWeeklyXp: 18000, perks: ['Tam Sunucu Yönetimi', 'Güvenli Liste', 'Developer Onay Yetkisi'] }
       ];
 
       const listToRender = (Array.isArray(ranks) && ranks.length > 0) ? ranks : defaultAsgardRanks;

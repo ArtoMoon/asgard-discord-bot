@@ -37,6 +37,11 @@ module.exports = {
       profile = new UserProfile({ guildId: guild.id, userId: targetMember.id });
     }
 
+    const userLevel = profile.level || RankManager.calculateLevel(profile.totalXp);
+    const currentMilestone = RankManager.getMilestoneForLevel(userLevel);
+    const milestones = RankManager.getLevelMilestones();
+    const nextMilestone = milestones.find(m => m.level > userLevel);
+
     const currentRank = RankManager.getRankByLevel(profile.currentRank);
     const progress = RankManager.getNextRankProgress(profile.currentRank, profile.weekly);
     const progressBar = RankManager.createProgressBar(progress.progressPercent, 12);
@@ -45,10 +50,17 @@ module.exports = {
       .setColor(currentRank.color ? parseInt(currentRank.color.replace('#', ''), 16) : config.colors.asgard)
       .setTitle(`⚔️ Asgard Savaşçı Profili: ${targetMember.displayName}`)
       .setThumbnail(targetMember.user.displayAvatarURL({ dynamic: true, size: 256 }))
-      .setDescription(`Asgard Krallığı'ndaki haftalık ve genel aktiflik durumunuz aşağıda listelenmiştir.`)
+      .setDescription(`Asgard Krallığı'ndaki kalıcı seviye yetkileriniz ve haftalık rütbe durumunuz aşağıdadır.`)
       .addFields(
         {
-          name: '👑 Mevcut Rütbe',
+          name: '⭐ Seviye Durumu (1-50)',
+          value: `**Seviye ${userLevel} / 50**\n` +
+            (currentMilestone ? `🎁 **Mevcut Yetki:** ${currentMilestone.perk}\n` : '') +
+            (nextMilestone ? `🎯 **Sıradaki Rol:** Seviye ${nextMilestone.level} (${nextMilestone.perk})` : '🏆 **Maksimum Seviyeye Ulaşıldı!**'),
+          inline: false
+        },
+        {
+          name: '👑 Haftalık Asgard Rütbesi',
           value: `**${currentRank.name}** (Rütbe ${currentRank.rank}/10)`,
           inline: true
         },
@@ -58,8 +70,8 @@ module.exports = {
           inline: true
         },
         {
-          name: '📈 Haftalık İlerleme',
-          value: `${progressBar}\n*(Genel Başarı: %${progress.progressPercent})*`,
+          name: '📈 Haftalık Rütbe İlerlemesi',
+          value: `${progressBar}\n*(Hedefe Kalan Başarı: %${progress.progressPercent})*`,
           inline: false
         },
         {

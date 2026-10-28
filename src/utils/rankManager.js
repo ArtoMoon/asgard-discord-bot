@@ -47,103 +47,103 @@ const LEVEL_MILESTONES = [
 const ASGARD_RANKS = [
   {
     rank: 1,
-    name: 'Thrall (Yeni Savaşçı)',
-    roleName: 'Asgard - Thrall',
+    name: 'Thrall (Stajyer Yetkili)',
+    roleName: 'Asgard - Thrall [Stajyer]',
     color: '#95a5a6',
     requiredWeeklyXp: 0,
     requiredMessages: 0,
     requiredVoiceMinutes: 0,
-    perks: ['Genel Sohbet & Sesli Kanallara Erişim', 'Temel Asgard Hakları']
+    perks: ['Yeni Üye Kayıt Yetkisi (!kayit)', 'Temel Sohbet Rehberliği']
   },
   {
     rank: 2,
-    name: 'Karl (Özgür Üye)',
-    roleName: 'Asgard - Karl',
+    name: 'Karl (Asistan Yetkili)',
+    roleName: 'Asgard - Karl [Asistan]',
     color: '#3498db',
     requiredWeeklyXp: 500,
     requiredMessages: 50,
     requiredVoiceMinutes: 30,
-    perks: ['Görsel & Resim Gönderme Yetkisi', 'Özel Metin Kanalları']
+    perks: ['Sohbet Düzeni & Uyarı', 'Yetkili Sohbetine Erişim']
   },
   {
     rank: 3,
-    name: 'Berserker (Yırtıcı)',
-    roleName: 'Asgard - Berserker',
+    name: 'Berserker (Deneme Moderatör)',
+    roleName: 'Asgard - Berserker [Mod]',
     color: '#e67e22',
     requiredWeeklyXp: 1200,
     requiredMessages: 120,
     requiredVoiceMinutes: 60,
-    perks: ['Harici Emoji & Sticker Kullanabilme', 'GIF Paylaşabilme']
+    perks: ['Kullanıcı Susturma (!timeout)', 'Sohbet Mesajı Temizleme']
   },
   {
     rank: 4,
-    name: 'Hersir (Akıncı)',
-    roleName: 'Asgard - Hersir',
+    name: 'Hersir (Sohbet Moderatörü)',
+    roleName: 'Asgard - Hersir [Chat Mod]',
     color: '#2ecc71',
     requiredWeeklyXp: 2200,
     requiredMessages: 200,
     requiredVoiceMinutes: 120,
-    perks: ['Bağlantı (Link) Paylaşabilme', 'Mesajlara Tepki Ekleyebilme']
+    perks: ['Cezalıya Atma (!jail)', 'Metin Kanalları Moderasyonu']
   },
   {
     rank: 5,
-    name: 'Thegn (Muhafız)',
-    roleName: 'Asgard - Thegn',
+    name: 'Thegn (Ses Moderatörü)',
+    roleName: 'Asgard - Thegn [Ses Mod]',
     color: '#1abc9c',
     requiredWeeklyXp: 3500,
     requiredMessages: 300,
     requiredVoiceMinutes: 200,
-    perks: ['Yayında 1080p/60FPS Açabilme', 'Öncelikli Etkinlik Bildirimleri']
+    perks: ['Ses Odalarında Üye Taşıma & Susturma', 'Geçici Ses Odası Yönetimi']
   },
   {
     rank: 6,
-    name: 'Jarl (Soylu Savaşçı)',
-    roleName: 'Asgard - Jarl',
+    name: 'Jarl (Kıdemli Moderatör)',
+    roleName: 'Asgard - Jarl [Kıdemli Mod]',
     color: '#9b59b6',
     requiredWeeklyXp: 5000,
     requiredMessages: 450,
     requiredVoiceMinutes: 300,
-    perks: ['Çekilişlerde 2x Kazanma Şansı', 'Sesli Odalarda Kamera Açma Önceliği']
+    perks: ['Üye Atma (Kick Yetkisi)', 'Yetki Verme Talep Açma (/yetki-ver)']
   },
   {
     rank: 7,
-    name: 'Einherjar (Valhalla Seçilmişi)',
-    roleName: 'Asgard - Einherjar',
+    name: 'Einherjar (Şef Moderatör)',
+    roleName: 'Asgard - Einherjar [Şef Mod]',
     color: '#e74c3c',
     requiredWeeklyXp: 7000,
     requiredMessages: 600,
     requiredVoiceMinutes: 450,
-    perks: ['Öncelikli Konuşmacı Yetkisi', 'Özel Valhalla Sohbet Kanalı']
+    perks: ['Moderatör Ekibini Denetleme', 'Denetim Kaydı (Audit Log) Takibi']
   },
   {
     rank: 8,
-    name: 'Valkyrie (Kader Rehberi)',
-    roleName: 'Asgard - Valkyrie',
+    name: 'Valkyrie (Asistan Yönetici)',
+    roleName: 'Asgard - Valkyrie [Yönetici]',
     color: '#fd79a8',
     requiredWeeklyXp: 9500,
     requiredMessages: 800,
     requiredVoiceMinutes: 600,
-    perks: ['Çekilişlerde 3x Kazanma Şansı', 'Sesli Oda Yönetim İzni']
+    perks: ['Sunucudan Yasaklama (Ban Yetkisi)', 'Kanal Düzeni & İzin Kontrolü']
   },
   {
     rank: 9,
-    name: 'Aesir (Tanrılar Meclisi)',
-    roleName: 'Asgard - Aesir',
+    name: 'Aesir (Konsey Yöneticisi)',
+    roleName: 'Asgard - Aesir [Konsey]',
     color: '#f39c12',
     requiredWeeklyXp: 13000,
     requiredMessages: 1100,
     requiredVoiceMinutes: 850,
-    perks: ['Alt Rütbelere Rehberlik Rozeti', 'Özel VIP Ses Odası Açabilme']
+    perks: ['Tüm Moderasyon Komutları', 'Etkinlik Yönetimi & Ceza İptalleri']
   },
   {
     rank: 10,
-    name: 'Odin\'s Champion (Asgard Şampiyonu)',
-    roleName: 'Asgard - Odin\'s Champion',
+    name: 'Odin\'s Champion (Baş Yönetici)',
+    roleName: 'Asgard - Odin\'s Champion [Baş Yönetici]',
     color: '#f1c40f',
     requiredWeeklyXp: 18000,
     requiredMessages: 1500,
     requiredVoiceMinutes: 1200,
-    perks: ['Tüm Ayrıcalıklar Açık', 'Efsanevi Asgard Tacı Rozeti', 'VIP Özel Destek & Çekiliş Hakkı']
+    perks: ['Tüm Sunucu Yönetimi', 'Güvenli Liste (Guard Muafiyeti)', 'Developer Onay Yetkisi']
   }
 ];
 

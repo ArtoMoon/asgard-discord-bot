@@ -47,10 +47,11 @@ module.exports = {
         {
           name: '💎 Özel Sunucu Sistemleri',
           value:
-            `• **10 Asgard Rütbesi:** Sesli odalarda takıldıkça ve mesaj attıkça otomatik rütbe atlarsınız (Örn: GIF atma, link paylaşma, ses kontrolü vb. açılır).\n` +
+            `• **10 Asgard Yönetim Kademesi:** Stajyer'den Baş Yöneticiye kadar sunucu moderasyon ve yönetim hiyerarşisi.\n` +
+            `• **1-50 Seviye Rolleri (Her 10 Seviyede Bir):** Üyeler XP kazanarak Seviye 10 (GIF/Sticker), 20 (Görsel), 30 (Link), 40 (Yayın), 50 (VIP) izinleri kazanır.\n` +
             `• **Görünmezlik Koruması:** Yetkililer 'Görünmez / Çevrimdışı' moda geçerse yetki rolleri güvenlik gereği askıya alınır, çevrimiçi olunca geri verilir!\n` +
             `• **Ses Odası Oluşturucu:** \`➕ Ses Odası Oluştur\` kanalına girdiğiniz an size özel geçici oda açılır, herkes çıktığında oda otomatik silinir.\n` +
-            `• **Developer Onaylı Yetki:** Hiçbir yetkili Discord'dan el ile rol veremez; bot engeller ve log kanalına alarm düşer.`
+            `• **Rol Guard & Developer Onayı:** Güvenli liste dışındaki kimse Discord'dan el ile rol veremez; bot engeller ve log kanalına alarm düşer.`
         }
       )
       .setFooter({ text: 'Asgard Krallığı Güç & Düzen Sistemi', iconURL: client.user.displayAvatarURL() })

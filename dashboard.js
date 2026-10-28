@@ -392,6 +392,10 @@ const server = http.createServer(async (req, res) => {
           roleId: r.roleId || null,
           name: r.name || `Rütbe ${r.rank}`
         }));
+
+        // 10 Asgard Yönetim Rollerini otomatik olarak Yetkili (staffRoleIds) listesine de ekle
+        const rankRoleIds = settings.ranks.map(r => r.roleId).filter(Boolean);
+        settings.staffRoleIds = Array.from(new Set([...(settings.staffRoleIds || []), ...rankRoleIds]));
       }
 
       await settings.save();
