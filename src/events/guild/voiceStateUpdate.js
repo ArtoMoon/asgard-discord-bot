@@ -15,19 +15,46 @@ module.exports = {
     const guild = newState.guild || oldState.guild;
 
     try {
-      const settings = await GuildSettings.findOne({ guildId: guild.id });
-      if (!settings) return;
+      let settings = await GuildSettings.findOne({ guildId: guild.id });
+      if (!settings) {
+        settings = await GuildSettings.create({ guildId: guild.id });
+      }
 
       // ==========================================
       // 1. JOIN TO CREATE (Özel Ses Odası Sistemi)
       // ==========================================
-      const joinToCreateId = settings.joinToCreateChannelId;
+      let joinToCreateId = settings.joinToCreateChannelId;
+
+      // Auto-detect master voice channel if not configured or changed
+      if (!joinToCreateId || !guild.channels.cache.has(joinToCreateId)) {
+        const found = guild.channels.cache.find(c =>
+          c.type === ChannelType.GuildVoice &&
+          (c.name.includes('Ses Odası Oluştur') || c.name.includes('Oda Oluştur'))
+        );
+        if (found) {
+          joinToCreateId = found.id;
+          settings.joinToCreateChannelId = found.id;
+          if (found.parentId) settings.tempVoiceCategoryId = found.parentId;
+          await settings.save().catch(() => null);
+          Logger.info(`[Geçici Oda] '${found.name}' kanalı otomatik tespit edildi ve ayarlandı.`);
+        }
+      }
 
       // Member joined the master "➕ Ses Odası Oluştur" channel
       if (newState.channelId && newState.channelId === joinToCreateId) {
-        const categoryId = settings.tempVoiceCategoryId || newState.channel.parentId;
+        Logger.info(`[Geçici Oda] ${member.user.tag} oda oluşturucu kanalına girdi. Yeni oda hazırlanıyor...`);
 
-        const newChannel = await guild.channels.create({
+        const categoryId = settings.tempVoiceCategoryId || newState.channel?.parentId;
+
+        const botMember = await guild.members.fetchMe().catch(() => null);
+        if (botMember && !botMember.permissions.has(PermissionFlagsBits.ManageChannels)) {
+          Logger.error('[Geçici Oda] Botun "Kanalları Yönet (Manage Channels)" yetkisi YOK!');
+        }
+        if (botMember && !botMember.permissions.has(PermissionFlagsBits.MoveMembers)) {
+          Logger.error('[Geçici Oda] Botun "Üyeleri Taşı (Move Members)" yetkisi YOK!');
+        }
+
+        const newChannel = await guild.channels.create({1
           name: `🔊・${member.displayName}'in Odası`,
           type: ChannelType.GuildVoice,
           parent: categoryId || undefined,
@@ -63,7 +90,7 @@ module.exports = {
           ownerId: member.id
         });
 
-        Logger.info(`[Geçici Oda] ${member.user.tag} için ${newChannel.name} kanalı oluşturuldu.`);
+        Logger.info(`[Geçici Oda] ${member.user.tag} için ${newChannel.name} kanalı oluşturuldu ve kullanıcı taşındı.`);
       }
 
       // Check if someone left a channel, and see if it's a temporary channel that is now empty (0 members)
