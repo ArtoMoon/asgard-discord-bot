@@ -7,28 +7,29 @@ const Logger = require('./logger');
 const clientOptions = {
   // Limiting message caches to avoid memory leaks
   makeCache: Options.cacheWithLimits({
-    MessageManager: 50, // Keep only 50 messages per channel
-    UserManager: 100,   // Keep only active users
-    GuildMemberManager: 200,
-    ThreadManager: 20,
+    MessageManager: 25, // Keep only 25 messages per channel
+    UserManager: 50,    // Keep only active users
+    GuildMemberManager: 100,
+    ThreadManager: 10,
     ReactionManager: 0,
     GuildBanManager: 0,
-    StageInstanceManager: 0
+    StageInstanceManager: 0,
+    PresenceManager: 100
   }),
   // Automatic memory sweepers running periodically
   sweepers: {
     ...Sweepers.filterByLifetime({
       messages: {
-        lifetime: 1800, // Sweep messages older than 30 minutes
-        sweepInterval: 300 // Run every 5 minutes
+        lifetime: 600, // Sweep messages older than 10 minutes
+        sweepInterval: 180 // Run every 3 minutes
       },
       users: {
-        lifetime: 3600, // Sweep users not in active cache for 1 hour
-        sweepInterval: 600
+        lifetime: 1800, // Sweep users not in active cache for 30 minutes
+        sweepInterval: 300
       },
       threads: {
-        lifetime: 3600,
-        sweepInterval: 600
+        lifetime: 1800,
+        sweepInterval: 300
       }
     })
   }
