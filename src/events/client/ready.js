@@ -56,21 +56,46 @@ module.exports = {
                   profile = new UserProfile({ guildId: guild.id, userId: memberId });
                 }
 
+                const oldLevel = profile.level || RankManager.calculateLevel(profile.totalXp);
                 // Add 5 minutes and 25 Voice XP
                 profile.voiceMinutes += 5;
                 profile.totalXp += 25;
                 profile.weekly.voiceMinutes += 5;
                 profile.weekly.xp += 25;
 
-                // Check rank up
-                const eligible = RankManager.calculateEligibleRank(profile.weekly);
-                if (eligible.rank > profile.currentRank) {
-                  profile.currentRank = eligible.rank;
-                  const rankConfig = settings.ranks.find(r => r.rank === eligible.rank);
-                  if (rankConfig && rankConfig.roleId) {
-                    await member.roles.add(rankConfig.roleId).catch(() => null);
+                const newLevel = RankManager.calculateLevel(profile.totalXp);
+                profile.level = newLevel;
+
+                // Check milestone rank up
+                if (newLevel > oldLevel) {
+                  const oldMilestone = RankManager.getHighestMilestoneReached(oldLevel);
+                  const newMilestone = RankManager.getHighestMilestoneReached(newLevel);
+
+                  if (newMilestone && (!oldMilestone || newMilestone.level > oldMilestone.level)) {
+                    profile.currentRank = newMilestone.level;
+                    const levelRoles = settings.levelRoles || [];
+                    const milestoneRoleConfig = levelRoles.find(r => r.level === newMilestone.level)
+                      || (settings.ranks && settings.ranks.find(r => r.rank === newMilestone.level / 5 || r.rank === newMilestone.level));
+
+                    if (milestoneRoleConfig && milestoneRoleConfig.roleId) {
+                      await member.roles.add(milestoneRoleConfig.roleId).catch(() => null);
+                    }
+                    Logger.info(`[Seviye Yükseldi] ${member.user.tag} yeni seviye hedefine ulaştı: Seviye ${newMilestone.level} (Ses XP ile)`);
                   }
-                  Logger.info(`[Rütbe Yükseldi] ${member.user.tag} yeni rütbeye ulaştı: ${eligible.name} (Ses XP ile)`);
+
+                  const logChannelId = settings.levelLogChannelId || settings.rankLogChannelId;
+                  if (logChannelId) {
+                    const embed = {
+                      color: 0x5865F2,
+                      title: '🔊 SES AKTİFLİĞİ: SEVİYE YÜKSELDİ!',
+                      description: `Tebrikler ${member}! Ses kanallarında aktif kalarak seviye atladın!\n\n` +
+                        `⭐ **Yeni Seviye:** **Seviye ${newLevel}**\n` +
+                        `🎙️ **Toplam Ses Süresi:** ${profile.voiceMinutes} dakika\n` +
+                        `✨ **Toplam XP:** ${profile.totalXp} XP`,
+                      timestamp: new Date().toISOString()
+                    };
+                    await Logger.sendGuildLog(guild, logChannelId, embed).catch(() => null);
+                  }
                 }
 
                 await profile.save();

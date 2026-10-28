@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node --max-old-space-size=180 index.js"
+    "start": "node --max-old-space-size=180 index.js",
+    "dashboard": "node dashboard.js",
+    "set-avatar": "node scripts/update-bot-profile.js assets/avatar.jpg"
   },
   "keywords": [],
   "author": "",

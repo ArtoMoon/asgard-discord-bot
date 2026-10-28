@@ -6,10 +6,11 @@ const UserProfileSchema = new mongoose.Schema({
 
   // Stats & XP
   totalXp: { type: Number, default: 0 },
+  level: { type: Number, default: 1 }, // 1 to 50
   messageCount: { type: Number, default: 0 },
   voiceMinutes: { type: Number, default: 0 },
 
-  // Current Asgard Rank (1-10)
+  // Current Level Milestone (10, 20, 30, 40, 50)
   currentRank: { type: Number, default: 1 },
 
   // Weekly Stats (resets periodically or rolling)

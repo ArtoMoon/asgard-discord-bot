@@ -1,7 +1,49 @@
 /**
- * 10 Asgard Public Server Ranks System
- * Her rütbe haftalık görevler (mesaj, ses, XP) ile yükselir ve üyelere özel ayrıcalıklar (perks) tanır.
+ * Seviye 1-50 Sistemi ve Her 10 Seviyede Rol Güncellemesi (10, 20, 30, 40, 50 MAX)
  */
+const LEVEL_MILESTONES = [
+  {
+    level: 10,
+    name: 'Seviye 10',
+    roleName: 'Seviye 10 [GIF/Sticker]',
+    color: '#3498db',
+    requiredXp: 4050,
+    perk: 'GIF & Harici Sticker Kullanabilme'
+  },
+  {
+    level: 20,
+    name: 'Seviye 20',
+    roleName: 'Seviye 20 [Görsel]',
+    color: '#2ecc71',
+    requiredXp: 18050,
+    perk: 'Görsel & Resim Paylaşma Yetkisi'
+  },
+  {
+    level: 30,
+    name: 'Seviye 30',
+    roleName: 'Seviye 30 [Link]',
+    color: '#9b59b6',
+    requiredXp: 42050,
+    perk: 'Bağlantı (Link) Paylaşma Yetkisi'
+  },
+  {
+    level: 40,
+    name: 'Seviye 40',
+    roleName: 'Seviye 40 [Yayın]',
+    color: '#e67e22',
+    requiredXp: 76050,
+    perk: '1080p/60FPS Canlı Yayın Açma & Ses Yetkisi'
+  },
+  {
+    level: 50,
+    name: 'Seviye 50 [MAX]',
+    roleName: 'Seviye 50 [Şampiyon / VIP]',
+    color: '#f1c40f',
+    requiredXp: 120050,
+    perk: 'Asgard Şampiyonu, Öncelikli Konuşmacı & VIP Ayrıcalıklar'
+  }
+];
+
 const ASGARD_RANKS = [
   {
     rank: 1,
@@ -106,6 +148,33 @@ const ASGARD_RANKS = [
 ];
 
 class RankManager {
+  static getLevelMilestones() {
+    return LEVEL_MILESTONES;
+  }
+
+  static calculateLevel(totalXp) {
+    if (!totalXp || totalXp <= 0) return 1;
+    const level = Math.floor(Math.sqrt(totalXp / 50)) + 1;
+    return Math.max(1, Math.min(50, level));
+  }
+
+  static xpForLevel(level) {
+    if (level <= 1) return 0;
+    return Math.pow(level - 1, 2) * 50;
+  }
+
+  static getMilestoneForLevel(level) {
+    return LEVEL_MILESTONES.find(m => m.level === level) || null;
+  }
+
+  static getHighestMilestoneReached(level) {
+    let highest = null;
+    for (const m of LEVEL_MILESTONES) {
+      if (level >= m.level) highest = m;
+    }
+    return highest;
+  }
+
   static getRanks() {
     return ASGARD_RANKS;
   }
@@ -183,6 +252,7 @@ class RankManager {
 }
 
 module.exports = {
+  LEVEL_MILESTONES,
   ASGARD_RANKS,
   RankManager
 };

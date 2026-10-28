@@ -10,7 +10,10 @@ module.exports = {
 
     try {
       const settings = await GuildSettings.findOne({ guildId: member.guild.id });
-      if (!settings) return;
+      if (!settings) {
+        Logger.warn(`[guildMemberAdd] ${member.guild.name} sunucusu için ayarlar bulunamadı (/kurulum veya /settings komutuyla ayar yapılmalı).`);
+        return;
+      }
 
       // 1. Assign Auto-Role (e.g. Unverified / Kayıtsız)
       const targetRoleId = settings.autoRoleId || settings.unverifiedRoleId;
@@ -46,7 +49,6 @@ module.exports = {
               `👤 **Hesap Kurulum Tarihi:** <t:${createdAt}:R>\n` +
               `👥 **Toplam Üye Sayımız:** **${member.guild.memberCount}**`)
             .setThumbnail(member.user.displayAvatarURL({ dynamic: true, size: 256 }))
-            .setImage('https://media.discordapp.net/attachments/1066735392233836647/1085289913994137680/asgard_banner.gif') // Placeholder or nice design
             .setFooter({ text: 'Asgard Krallığı Güvenlik & Kayıt Sistemi', iconURL: member.guild.iconURL() })
             .setTimestamp();
 
@@ -56,7 +58,11 @@ module.exports = {
           }).catch(err => {
             Logger.error('Hoş geldin mesajı gönderilemedi:', err.message);
           });
+        } else {
+          Logger.warn(`[guildMemberAdd] Hoş geldin kanalı (ID: ${settings.welcomeChannelId}) bulunamadı veya bota kapalı.`);
         }
+      } else {
+        Logger.warn(`[guildMemberAdd] Hoş geldin kanalı ayarlı değil! /settings hosgeldin-kanal veya /kurulum komutunu kullanın.`);
       }
     } catch (err) {
       Logger.error('guildMemberAdd eventinde hata:', err);

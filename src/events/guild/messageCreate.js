@@ -57,7 +57,7 @@ module.exports = {
       }
     }
 
-    // 2. Chat XP & Leveling Engine
+    // 2. Chat XP & Leveling Engine (Seviye 1-50 & Her 10 Seviyede Rol Güncelleme)
     const memberId = message.author.id;
     const rateLimitKey = `chat_xp_${message.guild.id}_${memberId}`;
 
@@ -70,45 +70,75 @@ module.exports = {
 
         const earnedXp = Math.floor(Math.random() * 11) + 15; // 15-25 XP
 
+        const oldLevel = profile.level || RankManager.calculateLevel(profile.totalXp);
         profile.messageCount += 1;
         profile.totalXp += earnedXp;
         profile.weekly.messages += 1;
         profile.weekly.xp += earnedXp;
 
-        // Check for Rank Progression
-        const eligible = RankManager.calculateEligibleRank(profile.weekly);
+        const newLevel = RankManager.calculateLevel(profile.totalXp);
+        profile.level = newLevel;
 
-        if (eligible.rank > profile.currentRank) {
-          const oldRank = RankManager.getRankByLevel(profile.currentRank);
-          profile.currentRank = eligible.rank;
+        // Level Up Trigger
+        if (newLevel > oldLevel) {
+          const oldMilestone = RankManager.getHighestMilestoneReached(oldLevel);
+          const newMilestone = RankManager.getHighestMilestoneReached(newLevel);
 
-          // Assign role if configured
-          const rankConfig = settings.ranks.find(r => r.rank === eligible.rank);
-          if (rankConfig && rankConfig.roleId) {
-            const role = message.guild.roles.cache.get(rankConfig.roleId);
-            if (role) {
-              await message.member.roles.add(role).catch(err => {
-                Logger.error('Rütbe rolü verilemedi:', err.message);
-              });
+          let awardedMilestone = null;
+          let roleUpdated = false;
+          let assignedRoleId = null;
+
+          // Milestone check every 10 levels (10, 20, 30, 40, 50)
+          if (newMilestone && (!oldMilestone || newMilestone.level > oldMilestone.level)) {
+            awardedMilestone = newMilestone;
+            profile.currentRank = newMilestone.level;
+
+            // Find milestone role in settings
+            const levelRoles = settings.levelRoles || [];
+            let milestoneRoleConfig = levelRoles.find(r => r.level === newMilestone.level);
+
+            // Backward compatibility fallback to ranks
+            if (!milestoneRoleConfig && settings.ranks) {
+              milestoneRoleConfig = settings.ranks.find(r => r.rank === newMilestone.level / 5 || r.rank === newMilestone.level);
+            }
+
+            if (milestoneRoleConfig && milestoneRoleConfig.roleId) {
+              const roleToAdd = message.guild.roles.cache.get(milestoneRoleConfig.roleId);
+              if (roleToAdd) {
+                await message.member.roles.add(roleToAdd).catch(err => {
+                  Logger.error('Seviye rolü verilemedi:', err.message);
+                });
+                roleUpdated = true;
+                assignedRoleId = milestoneRoleConfig.roleId;
+              }
             }
           }
 
-          // Announce Level Up
-          const rankUpEmbed = new EmbedBuilder()
-            .setColor(eligible.color || config.colors.gold)
-            .setTitle('⚔️ ASGARD DİYARINDA YÜKSELİŞ!')
-            .setDescription(`Tebrikler ${message.author}! Asgard diyarındaki gayretinle rütbe atladın!\n\n` +
-              `🛡️ **Eski Rütbe:** ${oldRank.name}\n` +
-              `👑 **Yeni Rütbe:** ${eligible.name} (Rütbe ${eligible.rank})\n\n` +
-              `🎁 **Açılan Ayrıcalıklar:**\n${eligible.perks.map(p => `• ${p}`).join('\n')}`)
-            .setFooter({ text: 'Asgard Krallığı Rütbe Sistemi', iconURL: message.guild.iconURL() })
+          // Build Level Up Embed
+          const levelUpEmbed = new EmbedBuilder()
+            .setColor(awardedMilestone ? awardedMilestone.color : config.colors.primary)
+            .setTitle(awardedMilestone ? `👑 [SEVİYE ${newMilestone.level}] YENİ AYRICALIK & ROL KAZANILDI!` : `⚡ TEBRİKLER! SEVİYE ATLADIN!`)
+            .setDescription(`Tebrikler ${message.author}! Asgard diyarındaki aktifliğinle yükseldin!\n\n` +
+              `📊 **Eski Seviye:** Seviye ${oldLevel}\n` +
+              `⭐ **Yeni Seviye:** **Seviye ${newLevel}**\n\n` +
+              (awardedMilestone ? `🎁 **Açılan Ayrıcalık:** **${awardedMilestone.perk}**\n` : '') +
+              (roleUpdated && assignedRoleId ? `🛡️ **Verilen Rol:** <@&${assignedRoleId}>\n\n` : '\n') +
+              `💬 **Toplam Mesaj:** **${profile.messageCount}**\n` +
+              `✨ **Toplam XP:** **${profile.totalXp.toLocaleString()} XP**`)
+            .setThumbnail(message.author.displayAvatarURL({ dynamic: true }))
+            .setFooter({ text: 'Asgard Seviye & Terfi Sistemi' })
             .setTimestamp();
 
-          await message.channel.send({ embeds: [rankUpEmbed] }).catch(() => null);
+          // Announce in chat
+          await message.channel.send({
+            content: `🎉 ${message.author} **Seviye ${newLevel}** oldu!`,
+            embeds: [levelUpEmbed]
+          }).catch(() => null);
 
-          // Also log to rank log channel if configured
-          if (settings.rankLogChannelId) {
-            await Logger.sendGuildLog(message.guild, settings.rankLogChannelId, rankUpEmbed);
+          // Log to seviye-log channel
+          const logChannelId = settings.levelLogChannelId || settings.rankLogChannelId;
+          if (logChannelId) {
+            await Logger.sendGuildLog(message.guild, logChannelId, levelUpEmbed);
           }
         }
 

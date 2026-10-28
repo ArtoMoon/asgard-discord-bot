@@ -1,0 +1,1957 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Asgard Bot Manager | Quick Settings Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            asgard: '#9b59b6',
+            discord: '#5865F2',
+            darkBg: '#0e1017',
+            cardBg: '#161926',
+            cardBorder: '#232738',
+            inputBg: '#1c2030'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #0e1017;
+      color: #e2e8f0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #12141f;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #2b3047;
+      border-radius: 4px;
+    }
+    .glow-border:focus-within {
+      border-color: #9b59b6;
+      box-shadow: 0 0 12px rgba(155, 89, 182, 0.35);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col custom-scrollbar">
+
+  <!-- TOP NAVIGATION -->
+  <header class="border-b border-cardBorder bg-[#131622]/80 backdrop-blur sticky top-0 z-50 px-6 py-4">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+      
+      <!-- Logo & Title -->
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-700 to-indigo-500 flex items-center justify-center shadow-lg shadow-purple-900/30">
+          <i class="fa-solid fa-shield-halved text-white text-xl"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="font-extrabold text-lg tracking-wide text-white">ASGARD BOT MANAGER</h1>
+            <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30">Local Dashboard</span>
+          </div>
+          <p class="text-xs text-gray-400">Bottan bağımsız hızlı sunucu & ayar yönetimi</p>
+        </div>
+      </div>
+
+      <!-- Server Selector & Status Badges -->
+      <div class="flex items-center gap-3">
+        <!-- MongoDB Status -->
+        <div id="mongoBadge" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-cardBg border border-cardBorder text-xs">
+          <span class="w-2.5 h-2.5 rounded-full bg-yellow-500 animate-pulse"></span>
+          <span class="text-gray-300 font-medium">MongoDB Kontrol Ediliyor...</span>
+        </div>
+
+        <!-- Discord API Status -->
+        <div id="discordBadge" class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-cardBg border border-cardBorder text-xs text-gray-300">
+          <i class="fa-brands fa-discord text-[#5865F2]"></i>
+          <span id="discordStatusText">Discord API</span>
+        </div>
+
+        <!-- Server Selector Dropdown -->
+        <div class="flex items-center gap-1.5 bg-inputBg border border-cardBorder rounded-lg px-2 py-1 relative">
+          <i class="fa-solid fa-server text-purple-400 text-xs mr-1"></i>
+          <select id="guildSelect" onchange="onGuildSelectChange(this.value)" class="bg-transparent text-xs text-white font-semibold focus:outline-none cursor-pointer max-w-[150px] sm:max-w-[210px] truncate">
+            <option value="">Sunucular yükleniyor...</option>
+          </select>
+          <button onclick="promptManualGuildId()" title="Farklı Bir Sunucu ID Gir" class="text-gray-400 hover:text-white p-1 rounded hover:bg-cardBg transition">
+            <i class="fa-solid fa-plus text-[11px] text-purple-400"></i>
+          </button>
+          <button onclick="loadGuildData()" title="Bu Sunucunun Verilerini Yenile" class="text-gray-400 hover:text-white p-1 rounded hover:bg-cardBg transition">
+            <i class="fa-solid fa-rotate text-[11px]"></i>
+          </button>
+        </div>
+
+        <!-- Invite Bot Button -->
+        <a id="inviteBotLink" href="#" target="_blank" class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cardBg hover:bg-inputBg border border-cardBorder text-xs text-purple-300 hover:text-white transition font-medium" title="Botu Başka Bir Sunucuya Davet Et">
+          <i class="fa-solid fa-link text-[11px]"></i>
+          <span>Botu Davet Et</span>
+        </a>
+
+        <!-- Hidden input holding current guild ID -->
+        <input type="hidden" id="guildIdInput">
+
+        <!-- Quick Save Button -->
+        <button onclick="saveAllSettings()" id="saveBtn" class="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-medium text-xs px-4 py-2 rounded-lg transition duration-200 shadow-md shadow-purple-900/40 active:scale-95">
+          <i class="fa-solid fa-floppy-disk"></i>
+          <span>Kaydet</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-7xl mx-auto w-full px-6 py-8 flex-1">
+
+    <!-- MongoDB Connection Alert Banner -->
+    <div id="mongoAlertBanner" class="hidden mb-6 bg-red-950/40 border border-red-500/50 rounded-2xl p-5 text-red-200 shadow-2xl backdrop-blur">
+      <div class="flex items-start gap-4">
+        <div class="w-10 h-10 rounded-xl bg-red-500/20 border border-red-500/40 flex items-center justify-center text-red-400 shrink-0 mt-0.5">
+          <i class="fa-solid fa-triangle-exclamation text-xl"></i>
+        </div>
+        <div class="flex-1 space-y-2">
+          <div class="flex items-center justify-between">
+            <h3 class="font-bold text-white text-sm flex items-center gap-2">
+              ❌ MongoDB Veri Tabanı Bağlantısı Kurulamadı
+            </h3>
+            <button onclick="init()" class="text-xs bg-red-500/20 hover:bg-red-500/30 text-red-200 border border-red-500/40 px-3 py-1 rounded-lg transition flex items-center gap-1.5 active:scale-95">
+              <i class="fa-solid fa-rotate"></i>
+              <span>Bağlantıyı Yeniden Dene</span>
+            </button>
+          </div>
+          <p id="mongoErrorDetail" class="text-xs text-red-300 font-mono bg-black/40 p-2.5 rounded-lg border border-red-500/20 break-all"></p>
+          <div class="text-xs text-gray-300 space-y-1.5 pt-1">
+            <p class="font-bold text-yellow-300 flex items-center gap-1.5">
+              <i class="fa-solid fa-lightbulb"></i> Nasıl Çözülür? (En Sık Karşılaşılan Neden: IP Whitelist)
+            </p>
+            <ol class="list-decimal list-inside space-y-1 text-gray-300">
+              <li><a href="https://cloud.mongodb.com" target="_blank" class="text-purple-400 hover:text-purple-300 underline font-semibold">cloud.mongodb.com</a> adresine girin.</li>
+              <li>Sol menüden <strong class="text-white">Security &gt; Network Access</strong> sekmesine tıklayın.</li>
+              <li><strong class="text-white">"Add IP Address"</strong> butonuna basın.</li>
+              <li><strong class="text-white">"ALLOW ACCESS FROM ANYWHERE" (0.0.0.0/0)</strong> seçeneğini seçip onaylayın (Confirm).</li>
+              <li>1 dakika bekledikten sonra yukarıdaki <strong class="text-white">"Bağlantıyı Yeniden Dene"</strong> butonuna basın.</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Notification Banner -->
+    <div id="toast" class="hidden fixed bottom-6 right-6 z-50 max-w-md px-4 py-3 rounded-xl border shadow-2xl transition-all duration-300 flex items-center gap-3">
+      <i id="toastIcon" class="fa-solid text-lg"></i>
+      <div id="toastMessage" class="text-sm font-medium"></div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="flex border-b border-cardBorder mb-8 overflow-x-auto custom-scrollbar gap-2">
+      <button onclick="switchTab('welcomeTab')" id="btn-welcomeTab" class="tab-btn px-4 py-3 font-semibold text-sm border-b-2 border-purple-500 text-purple-400 flex items-center gap-2 transition">
+        <i class="fa-solid fa-door-open"></i>
+        <span>Hoş Geldin & Giriş</span>
+      </button>
+      <button onclick="switchTab('ranksTab')" id="btn-ranksTab" class="tab-btn px-4 py-3 font-semibold text-sm border-b-2 border-transparent text-gray-400 hover:text-gray-200 flex items-center gap-2 transition">
+        <i class="fa-solid fa-crown text-yellow-500"></i>
+        <span>Seviye Rolleri (10-50)</span>
+      </button>
+      <button onclick="switchTab('rolesTab')" id="btn-rolesTab" class="tab-btn px-4 py-3 font-semibold text-sm border-b-2 border-transparent text-gray-400 hover:text-gray-200 flex items-center gap-2 transition">
+        <i class="fa-solid fa-user-shield"></i>
+        <span>Roller & Güvenlik</span>
+      </button>
+      <button onclick="switchTab('channelsTab')" id="btn-channelsTab" class="tab-btn px-4 py-3 font-semibold text-sm border-b-2 border-transparent text-gray-400 hover:text-gray-200 flex items-center gap-2 transition">
+        <i class="fa-solid fa-hashtag"></i>
+        <span>Log & Ses Kanalları</span>
+      </button>
+      <button onclick="switchTab('generalTab')" id="btn-generalTab" class="tab-btn px-4 py-3 font-semibold text-sm border-b-2 border-transparent text-gray-400 hover:text-gray-200 flex items-center gap-2 transition">
+        <i class="fa-solid fa-gear"></i>
+        <span>Genel & Prefix</span>
+      </button>
+      <button onclick="switchTab('embedBuilderTab')" id="btn-embedBuilderTab" class="tab-btn px-4 py-3 font-semibold text-sm border-b-2 border-transparent text-gray-400 hover:text-gray-200 flex items-center gap-2 transition">
+        <i class="fa-solid fa-palette text-pink-400"></i>
+        <span>Embed Düzenleyici</span>
+        <span class="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-pink-500/20 text-pink-300 border border-pink-500/30">BETA</span>
+      </button>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- TAB 1: HOŞ GELDİN & GİRİŞ SİSTEMİ -->
+    <!-- ======================================================== -->
+    <div id="welcomeTab" class="tab-content block">
+      
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- Left Column: Form Settings -->
+        <div class="lg:col-span-7 space-y-6">
+          
+          <div class="bg-cardBg border border-cardBorder rounded-2xl p-6 shadow-xl space-y-5">
+            <div class="flex items-center justify-between pb-3 border-b border-cardBorder">
+              <div>
+                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                  <i class="fa-solid fa-bullhorn text-purple-400"></i>
+                  Hoş Geldin Mesaj Ayarları
+                </h3>
+                <p class="text-xs text-gray-400 mt-0.5">Yeni üyeler sunucuya katıldığında gönderilecek mesajın kanalı</p>
+              </div>
+              <span class="px-2 py-1 bg-green-500/10 text-green-400 border border-green-500/20 rounded-md text-[11px] font-bold">Aktif Sistem</span>
+            </div>
+
+            <!-- Welcome Channel Selector -->
+            <div>
+              <label class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">
+                Hoş Geldin Metin Kanalı (welcomeChannelId)
+              </label>
+              <div class="relative">
+                <select id="welcomeChannelSelect" onchange="syncManualInput('welcomeChannelSelect', 'welcomeChannelInput')" class="w-full bg-inputBg border border-cardBorder text-white text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 transition">
+                  <option value="">Kanal Seçin veya elle ID girin...</option>
+                </select>
+              </div>
+              <div class="mt-2 flex items-center gap-2">
+                <span class="text-xs text-gray-500">Kanal ID:</span>
+                <input type="text" id="welcomeChannelInput" placeholder="Kanal ID girin (örn: 106673...)" class="flex-1 bg-inputBg border border-cardBorder text-xs text-gray-300 rounded-lg px-3 py-1.5 focus:outline-none focus:border-purple-500 font-mono">
+              </div>
+            </div>
+
+            <!-- Auto-Role (Unverified) Selector -->
+            <div>
+              <label class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">
+                Girişte Verilecek Oto-Rol / Kayıtsız Rolü (autoRoleId)
+              </label>
+              <select id="autoRoleSelect" onchange="syncManualInput('autoRoleSelect', 'autoRoleInput')" class="w-full bg-inputBg border border-cardBorder text-white text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 transition">
+                <option value="">Rol Seçin veya elle ID girin...</option>
+              </select>
+              <div class="mt-2 flex items-center gap-2">
+                <span class="text-xs text-gray-500">Rol ID:</span>
+                <input type="text" id="autoRoleInput" placeholder="Rol ID girin" class="flex-1 bg-inputBg border border-cardBorder text-xs text-gray-300 rounded-lg px-3 py-1.5 focus:outline-none focus:border-purple-500 font-mono">
+              </div>
+            </div>
+
+            <!-- Registered Role Selector -->
+            <div>
+              <label class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">
+                Kayıt Olduktan Sonra Verilecek Üye Rolü (registeredRoleId)
+              </label>
+              <select id="registeredRoleSelect" onchange="syncManualInput('registeredRoleSelect', 'registeredRoleInput')" class="w-full bg-inputBg border border-cardBorder text-white text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 transition">
+                <option value="">Rol Seçin veya elle ID girin...</option>
+              </select>
+              <div class="mt-2 flex items-center gap-2">
+                <span class="text-xs text-gray-500">Rol ID:</span>
+                <input type="text" id="registeredRoleInput" placeholder="Rol ID girin" class="flex-1 bg-inputBg border border-cardBorder text-xs text-gray-300 rounded-lg px-3 py-1.5 focus:outline-none focus:border-purple-500 font-mono">
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="pt-4 border-t border-cardBorder flex flex-wrap items-center justify-between gap-3">
+              <button onclick="sendTestWelcome()" id="testWelcomeBtn" class="flex items-center gap-2 bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/40 text-xs font-bold px-4 py-2.5 rounded-xl transition">
+                <i class="fa-solid fa-paper-plane"></i>
+                <span>Kanala Gerçek Test Mesajı Gönder</span>
+              </button>
+
+              <button onclick="saveAllSettings()" class="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold px-5 py-2.5 rounded-xl transition shadow-lg shadow-purple-900/30">
+                <i class="fa-solid fa-check"></i>
+                <span>Değişiklikleri Kaydet</span>
+              </button>
+            </div>
+
+          </div>
+
+          <!-- Helpful Hint Box -->
+          <div class="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 flex items-start gap-3 text-xs text-blue-300">
+            <i class="fa-solid fa-circle-info text-blue-400 mt-0.5 text-sm"></i>
+            <div>
+              <p class="font-bold mb-1">Hoş Geldin Mesajı Hakkında:</p>
+              <p>Burada seçtiğin hoş geldin kanalı MongoDB veri tabanına anında kaydedilir. Biri sunucuya katıldığında bot bu kanala Discord Embed mesajı ve oto-rolü otomatik uygular.</p>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Right Column: Discord Embed Live Preview -->
+        <div class="lg:col-span-5">
+          <div class="bg-cardBg border border-cardBorder rounded-2xl p-6 shadow-xl sticky top-24">
+            
+            <div class="flex items-center justify-between pb-3 border-b border-cardBorder mb-4">
+              <div class="flex items-center gap-2">
+                <i class="fa-solid fa-eye text-purple-400 text-sm"></i>
+                <h4 class="text-sm font-bold text-white">Canlı Discord Mesaj Önizlemesi</h4>
+              </div>
+              <span class="text-[10px] text-gray-400 bg-black/40 px-2 py-0.5 rounded">Discord UI</span>
+            </div>
+
+            <!-- Discord Simulated Message Box -->
+            <div class="bg-[#313338] rounded-xl p-4 text-[#dbdee1] font-sans text-xs space-y-3 border border-white/5 shadow-inner">
+              
+              <!-- Author header -->
+              <div class="flex items-center gap-2">
+                <img src="https://cdn.discordapp.com/avatars/1563523106788868236/ce9ca3d3274ff7f2ce57df61350d326c.png?size=128" alt="Bot Avatar" class="w-9 h-9 rounded-full object-cover border border-purple-500/40 shadow">
+                <div>
+                  <div class="flex items-center gap-1.5">
+                    <span class="font-bold text-white text-xs">Asgard Muhafızı</span>
+                    <span class="bg-[#5865f2] text-white text-[9px] font-bold px-1 rounded">BOT</span>
+                    <span class="text-[10px] text-gray-400">Bugün 10:00</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Message Content text -->
+              <div class="pl-10 text-gray-200">
+                👋 Hoş geldin <span class="bg-[#5865f2]/30 text-[#c9cdfb] px-1 rounded font-medium">@YeniÜye</span>! Aramıza katıldığın için mutluyuz.
+              </div>
+
+              <!-- Embed Body -->
+              <div class="ml-10 border-l-4 border-asgard bg-[#2b2d31] rounded-r-lg p-3.5 space-y-2.5">
+                <div class="font-bold text-white text-sm flex items-center gap-1.5">
+                  ⚔️ ASGARD KAPILARINA HOŞ GELDİN!
+                </div>
+                
+                <p class="text-gray-300 leading-relaxed text-[11px]">
+                  Selamlar <span class="text-[#c9cdfb]">@YeniÜye</span>, <strong>Asgard Diyarı</strong>'na hoş geldin!<br><br>
+                  📜 <strong>Kayıt ve Giriş Rehberi:</strong><br>
+                  • Sunucumuzdaki metin ve ses kanallarına erişebilmek için kayıt olmalısın.<br>
+                  • Kayıt işlemi için <code class="bg-[#1e1f22] px-1 rounded text-purple-300 font-mono" id="previewPrefix1">!kayit [İsim]</code> veya <code class="bg-[#1e1f22] px-1 rounded text-purple-300 font-mono">/kayit [isim]</code> komutunu kullanabilirsin.<br>
+                  • Yetkililerimiz müsait olduğunda kaydını onaylayacaktır.<br><br>
+                  🛡️ <strong>Asgard Rütbe Sistemi:</strong><br>
+                  • Ses kanallarında vakit geçirerek ve sohbette aktif olarak <strong>10 Asgard Rütbesi</strong>'nde yükselebilirsin!<br><br>
+                  👤 <strong>Hesap Kurulum Tarihi:</strong> 3 gün önce<br>
+                  👥 <strong>Toplam Üye Sayımız:</strong> 150
+                </p>
+
+                <div class="pt-2 border-t border-white/5 text-[10px] text-gray-400 flex items-center justify-between">
+                  <span>Asgard Krallığı Güvenlik & Kayıt Sistemi</span>
+                  <span id="previewTime">Bugün</span>
+                </div>
+              </div>
+
+            </div>
+
+            <div class="mt-4 text-center">
+              <span class="text-[11px] text-gray-400 italic">Mesaj gönderildiğinde sunucunuzda bu şekilde gözükür.</span>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- TAB: SEVİYE & TERFİ ROLLERİ (10, 20, 30, 40, 50 MAX) -->
+    <!-- ======================================================== -->
+    <div id="ranksTab" class="tab-content hidden space-y-6">
+      
+      <!-- Quick Action Header Banner -->
+      <div class="bg-cardBg border border-cardBorder rounded-2xl p-6 shadow-xl flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <div class="flex items-center gap-2">
+            <h3 class="text-base font-extrabold text-white flex items-center gap-2">
+              <i class="fa-solid fa-crown text-yellow-500"></i>
+              Seviye Sistemi & Her 10 Seviyede Rol Güncelleme (10, 20, 30, 40, 50 MAX)
+            </h3>
+            <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-yellow-500/20 text-yellow-300 border border-yellow-500/30">ÜYE AYRICALIKLARI</span>
+          </div>
+          <p class="text-xs text-gray-400 mt-1">
+            Üyeler sohbette ve seste XP kazanarak 1-50 arası seviye atlar. Her 10 seviyede bir <strong>GIF, Resim, Link ve Yayın</strong> gibi özel yetki rolleri otomatik güncellenir. Yetkili/Moderatör rolleri ise bu sistemden tamamen ayrıdır.
+          </p>
+        </div>
+        <div class="flex flex-wrap items-center gap-3">
+          <button onclick="autoSetupRanks()" id="autoRanksBtn" class="flex items-center gap-2 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-300 border border-yellow-500/30 text-xs font-bold px-4 py-2.5 rounded-xl transition active:scale-95 shadow-md">
+            <i class="fa-solid fa-wand-magic-sparkles text-yellow-400"></i>
+            <span>Tüm Rolleri Discord'da Otomatik Oluştur</span>
+          </button>
+          <button onclick="fullSetup()" id="fullSetupBtn" class="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition shadow-lg shadow-purple-900/40 active:scale-95">
+            <i class="fa-solid fa-bolt"></i>
+            <span>Tek Tıkla Tam Kurulum (Roller + Seviye Log + Kanallar)</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Section 1: Milestone Level Roles (10, 20, 30, 40, 50 MAX) -->
+      <div class="space-y-3">
+        <div class="flex items-center justify-between pb-2 border-b border-cardBorder">
+          <div>
+            <h4 class="text-sm font-bold text-white flex items-center gap-2">
+              <i class="fa-solid fa-gift text-yellow-400"></i>
+              Her 10 Seviyede Rol &amp; Yetki Sistemi (10, 20, 30, 40, 50 MAX)
+            </h4>
+            <p class="text-xs text-gray-400">Üyelerin sohbette ve seste XP kazanarak Seviye 10, 20, 30, 40 ve 50'ye ulaştıklarında kazanacakları GIF, Resim, Link ve Yayın rolleri.</p>
+          </div>
+          <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-yellow-500/20 text-yellow-300 border border-yellow-500/30">5 SEVİYE ROLÜ</span>
+        </div>
+        <div id="levelRolesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div class="col-span-full py-4 text-center text-gray-400 text-xs">
+            <i class="fa-solid fa-spinner fa-spin mr-2"></i> Seviye rolleri yükleniyor...
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 2: 10 Asgard Ranks (1-10) -->
+      <div class="space-y-3 pt-6 border-t border-cardBorder">
+        <div class="flex items-center justify-between pb-2 border-b border-cardBorder">
+          <div>
+            <h4 class="text-sm font-bold text-white flex items-center gap-2">
+              <i class="fa-solid fa-crown text-purple-400"></i>
+              10 Asgard Rütbesi (1'den 10'a Kadar Tüm Rütbe Rolleri)
+            </h4>
+            <p class="text-xs text-gray-400">Thrall, Karl, Berserker, Hersir, Thegn, Jarl, Einherjar, Valkyrie, Aesir ve Odin's Champion rütbeleri.</p>
+          </div>
+          <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30">10 ASGARD RÜTBESİ</span>
+        </div>
+        <div id="asgardRanksGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="col-span-full py-4 text-center text-gray-400 text-xs">
+            <i class="fa-solid fa-spinner fa-spin mr-2"></i> 10 Asgard rütbesi yükleniyor...
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- TAB 2: ROLLER & GÜVENLİK -->
+    <!-- ======================================================== -->
+    <div id="rolesTab" class="tab-content hidden space-y-6">
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        <!-- Staff Roles (Yetkili Rolleri) -->
+        <div class="bg-cardBg border border-cardBorder rounded-2xl p-6 shadow-xl space-y-4">
+          <h3 class="text-base font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-id-badge text-purple-400"></i>
+            Yetkili / Moderatör Rolleri (staffRoleIds)
+          </h3>
+          <p class="text-xs text-gray-400">Sunucu yetkili ekibi, moderatör ve yönetim kadrosu rolleri.</p>
+          
+          <select id="staffRoleSelect" onchange="addStaffRoleFromSelect(this.value)" class="w-full bg-inputBg border border-cardBorder text-white text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500">
+            <option value="">Listeden Yetkili Rolü Seç &amp; Ekle...</option>
+          </select>
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-gray-500">Rol ID'leri:</span>
+            <input type="text" id="staffRoleIdsInput" placeholder="Yetkili rol ID'leri (virgülle ayırın)" class="flex-1 bg-inputBg border border-cardBorder text-xs text-gray-300 rounded-lg px-3 py-1.5 focus:outline-none focus:border-purple-500 font-mono">
+          </div>
+        </div>
+        
+        <!-- Jail Role -->
+        <div class="bg-cardBg border border-cardBorder rounded-2xl p-6 shadow-xl space-y-4">
+          <h3 class="text-base font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-handcuffs text-red-400"></i>
+            Cezalı / Jail Rolü (jailRoleId)
+          </h3>
+          <p class="text-xs text-gray-400">Jail'e atılan kullanıcıların tüm yetkileri alınıp bu rol verilir.</p>
+          
+          <select id="jailRoleSelect" onchange="syncManualInput('jailRoleSelect', 'jailRoleInput')" class="w-full bg-inputBg border border-cardBorder text-white text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500">
+            <option value="">Rol Seçin...</option>
+          </select>
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-gray-500">Rol ID:</span>
+            <input type="text" id="jailRoleInput" placeholder="Jail Rol ID" class="flex-1 bg-inputBg border border-cardBorder text-xs text-gray-300 rounded-lg px-3 py-1.5 focus:outline-none focus:border-purple-500 font-mono">
+          </div>
+        </div>
+
+        <!-- Safe Whitelist IDs (Guard) -->
+        <div class="bg-cardBg border border-cardBorder rounded-2xl p-6 shadow-xl space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-base font-bold text-white flex items-center gap-2">
+              <i class="fa-solid fa-user-lock text-green-400"></i>
+              Güvenli Liste (Safe Whitelist - safeUserIds)
+            </h3>
+            <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-green-500/20 text-green-300 border border-green-500/30">ROL GUARD</span>
+          </div>
+          <p class="text-xs text-gray-400">Discord üzerinden el ile rol vermesine <strong>izin verilen</strong> güvenli kullanıcı ID'leri (virgülle ayırın).</p>
+          <div class="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-3 text-[11px] text-yellow-300">
+            ⚠️ <strong>Sıkı Rol Koruması:</strong> Bu listede veya Developer listesinde olmayan HİÇ KİMSE Discord'da el ile rol veremez. Verilirse bot rolü derhal geri alır ve Mod-Log'a güvenlik uyarısı atar!
+          </div>
+          <textarea id="safeUserIdsInput" rows="2" placeholder="898644733776244746, 987654321..." class="w-full bg-inputBg border border-cardBorder text-white text-xs rounded-xl p-3 focus:outline-none focus:border-green-500 font-mono"></textarea>
+          <span class="text-[11px] text-gray-500">Sunucu Sahibi ve Developerlar otomatik olarak güvenli listededir.</span>
+        </div>
+
+        <!-- Developer IDs -->
+        <div class="bg-cardBg border border-cardBorder rounded-2xl p-6 shadow-xl space-y-4">
+          <h3 class="text-base font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-code text-indigo-400"></i>
+            Developer / Geliştirici Kullanıcı ID'leri
+          </h3>
+          <p class="text-xs text-gray-400">Yetki verme taleplerini onaylayabilecek ana bot yöneticileri (virgülle ayırın).</p>
+          
+          <textarea id="developerIdsInput" rows="3" placeholder="898644733776244746, 123456789..." class="w-full bg-inputBg border border-cardBorder text-white text-xs rounded-xl p-3 focus:outline-none focus:border-purple-500 font-mono"></textarea>
+          <span class="text-[11px] text-gray-500">Birden fazla kullanıcı için araya virgül koyun.</span>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- TAB 3: LOG & SES KANALLARI -->
+    <!-- ======================================================== -->
+    <div id="channelsTab" class="tab-content hidden space-y-6">
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        <!-- Mod Log Channel -->
+        <div class="bg-cardBg border border-cardBorder rounded-2xl p-6 shadow-xl space-y-4">
+          <h3 class="text-base font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-shield text-blue-400"></i>
+            Moderasyon Log Kanalı (modLogChannelId)
+          </h3>
+          <p class="text-xs text-gray-400">Jail, ban, kick, timeout ve ceza kayıtlarının atılacağı kanal.</p>
+          
+          <select id="modLogChannelSelect" onchange="syncManualInput('modLogChannelSelect', 'modLogChannelInput')" class="w-full bg-inputBg border border-cardBorder text-white text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500">
+            <option value="">Kanal Seçin...</option>
+          </select>
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-gray-500">Kanal ID:</span>
+            <input type="text" id="modLogChannelInput" placeholder="Kanal ID" class="flex-1 bg-inputBg border border-cardBorder text-xs text-gray-300 rounded-lg px-3 py-1.5 focus:outline-none font-mono">
+          </div>
+        </div>
+
+        <!-- Approval Channel -->
+        <div class="bg-cardBg border border-cardBorder rounded-2xl p-6 shadow-xl space-y-4">
+          <h3 class="text-base font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-key text-yellow-400"></i>
+            Developer Yetki Onay Kanalı (approvalChannelId)
+          </h3>
+          <p class="text-xs text-gray-400">/yetki-ver komutuyla açılan butonlu yetki taleplerinin iletileceği kanal.</p>
+          
+          <select id="approvalChannelSelect" onchange="syncManualInput('approvalChannelSelect', 'approvalChannelInput')" class="w-full bg-inputBg border border-cardBorder text-white text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500">
+            <option value="">Kanal Seçin...</option>
+          </select>
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-gray-500">Kanal ID:</span>
+            <input type="text" id="approvalChannelInput" placeholder="Kanal ID" class="flex-1 bg-inputBg border border-cardBorder text-xs text-gray-300 rounded-lg px-3 py-1.5 focus:outline-none font-mono">
+          </div>
+        </div>
+
+        <!-- Level Log Channel -->
+        <div class="bg-cardBg border border-cardBorder rounded-2xl p-6 shadow-xl space-y-4">
+          <h3 class="text-base font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-chart-line text-yellow-400"></i>
+            Seviye Log Kanalı (levelLogChannelId)
+          </h3>
+          <p class="text-xs text-gray-400">Üyeler seviye atladığında ve her 10 seviyede rol kazandığında tebrik logu atılır.</p>
+          
+          <select id="levelLogChannelSelect" onchange="syncManualInput('levelLogChannelSelect', 'levelLogChannelInput')" class="w-full bg-inputBg border border-cardBorder text-white text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-yellow-500">
+            <option value="">Kanal Seçin...</option>
+          </select>
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-gray-500">Kanal ID:</span>
+            <input type="text" id="levelLogChannelInput" placeholder="Kanal ID" class="flex-1 bg-inputBg border border-cardBorder text-xs text-gray-300 rounded-lg px-3 py-1.5 focus:outline-none font-mono">
+          </div>
+        </div>
+
+        <!-- Rank Log Channel -->
+        <div class="bg-cardBg border border-cardBorder rounded-2xl p-6 shadow-xl space-y-4">
+          <h3 class="text-base font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-crown text-purple-400"></i>
+            Rütbe Log Kanalı (rankLogChannelId)
+          </h3>
+          <p class="text-xs text-gray-400">Kullanıcılar 10 Asgard rütbesinde yükseldiğinde tebrik logu atılır.</p>
+          
+          <select id="rankLogChannelSelect" onchange="syncManualInput('rankLogChannelSelect', 'rankLogChannelInput')" class="w-full bg-inputBg border border-cardBorder text-white text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500">
+            <option value="">Kanal Seçin...</option>
+          </select>
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-gray-500">Kanal ID:</span>
+            <input type="text" id="rankLogChannelInput" placeholder="Kanal ID" class="flex-1 bg-inputBg border border-cardBorder text-xs text-gray-300 rounded-lg px-3 py-1.5 focus:outline-none font-mono">
+          </div>
+        </div>
+
+        <!-- Join to Create Channel -->
+        <div class="bg-cardBg border border-cardBorder rounded-2xl p-6 shadow-xl space-y-4">
+          <h3 class="text-base font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-microphone text-green-400"></i>
+            Özel Ses Odası Oluşturucu (joinToCreateChannelId)
+          </h3>
+          <p class="text-xs text-gray-400">Giren kullanıcıya anında geçici özel ses odası açan tetikleyici kanal.</p>
+          
+          <select id="j2cChannelSelect" onchange="syncManualInput('j2cChannelSelect', 'j2cChannelInput')" class="w-full bg-inputBg border border-cardBorder text-white text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500">
+            <option value="">Ses Kanalı Seçin...</option>
+          </select>
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-gray-500">Kanal ID:</span>
+            <input type="text" id="j2cChannelInput" placeholder="Ses Kanalı ID" class="flex-1 bg-inputBg border border-cardBorder text-xs text-gray-300 rounded-lg px-3 py-1.5 focus:outline-none font-mono">
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- TAB 4: GENEL & PREFIX -->
+    <!-- ======================================================== -->
+    <div id="generalTab" class="tab-content hidden space-y-6">
+      
+      <div class="bg-cardBg border border-cardBorder rounded-2xl p-6 shadow-xl max-w-xl space-y-4">
+        <h3 class="text-base font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-terminal text-gray-300"></i>
+          Bot Ön Eki (Prefix)
+        </h3>
+        <p class="text-xs text-gray-400">Metin komutlarını çalıştırmak için kullanılacak ön ek (Örn: !, ., ?, -)</p>
+        
+        <div class="flex items-center gap-3">
+          <input type="text" id="prefixInput" maxlength="5" placeholder="!" class="w-24 bg-inputBg border border-cardBorder text-white text-center font-bold text-lg rounded-xl py-2.5 focus:outline-none focus:border-purple-500">
+          <span class="text-xs text-gray-400">Örnek: <code class="text-purple-400 font-mono" id="prefixSample">!kayit [isim]</code></span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- TAB 5: EMBED DÜZENLEYİCİ (BETA) -->
+    <!-- ======================================================== -->
+    <div id="embedBuilderTab" class="tab-content hidden space-y-6">
+      
+      <!-- Top banner with Templates & Destination Channel -->
+      <div class="bg-cardBg border border-cardBorder rounded-2xl p-6 shadow-xl flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <div class="flex items-center gap-2">
+            <h3 class="text-base font-extrabold text-white flex items-center gap-2">
+              <i class="fa-solid fa-palette text-pink-400"></i>
+              Görsel Discord Embed Düzenleyici & Gönderici
+            </h3>
+            <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-pink-500/20 text-pink-300 border border-pink-500/30">BETA</span>
+          </div>
+          <p class="text-xs text-gray-400 mt-1">
+            Bota komut yazmadan doğrudan web üzerinden istediğiniz renk, afiş ve başlıkla profesyonel Discord Embed kartları tasarlayın ve seçtiğiniz kanala anında gönderin.
+          </p>
+        </div>
+
+        <!-- Quick Template Selector -->
+        <div class="flex items-center gap-2">
+          <span class="text-xs text-gray-400 font-semibold">Hazır Şablon:</span>
+          <select id="embedTemplateSelect" onchange="applyEmbedTemplate(this.value)" class="bg-inputBg border border-cardBorder text-white text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-pink-500 cursor-pointer">
+            <option value="">Şablon Seçin...</option>
+            <option value="announcement">📢 Önemli Duyuru</option>
+            <option value="rules">📜 Sunucu Kuralları & Rehber</option>
+            <option value="ranks">⚔️ Asgard Rütbe Bilgilendirme</option>
+            <option value="event">🎁 Çekiliş & Etkinlik</option>
+            <option value="clear">🧹 Sıfırla (Boş Form)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Main Editor Grid: Left Form, Right Discord Live Preview -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- Left: Form Controls (7 cols) -->
+        <div class="lg:col-span-7 space-y-6">
+          
+          <!-- Target Channel & Outer Content -->
+          <div class="bg-cardBg border border-cardBorder rounded-2xl p-6 shadow-xl space-y-4">
+            <h4 class="text-sm font-bold text-white flex items-center gap-2 pb-2 border-b border-cardBorder">
+              <i class="fa-solid fa-paper-plane text-pink-400"></i>
+              Gönderim Ayarları
+            </h4>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-1.5">
+                  Hedef Metin Kanalı *
+                </label>
+                <select id="embedTargetChannelSelect" class="w-full bg-inputBg border border-cardBorder text-white text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-pink-500">
+                  <option value="">Kanal Seçin...</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-1.5">
+                  Dış Mesaj / Etiket (Content)
+                </label>
+                <input type="text" id="embedOuterContent" oninput="updateEmbedPreview()" placeholder="Örn: @everyone veya 🔔 Dikkat!" class="w-full bg-inputBg border border-cardBorder text-white text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-pink-500">
+              </div>
+            </div>
+          </div>
+
+          <!-- Embed Core: Color, Title, Description -->
+          <div class="bg-cardBg border border-cardBorder rounded-2xl p-6 shadow-xl space-y-4">
+            <h4 class="text-sm font-bold text-white flex items-center gap-2 pb-2 border-b border-cardBorder">
+              <i class="fa-solid fa-pen-to-square text-purple-400"></i>
+              Temel İçerik & Renk
+            </h4>
+
+            <!-- Color Picker & Presets -->
+            <div>
+              <label class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-1.5">
+                Sol Çizgi Rengi (Color)
+              </label>
+              <div class="flex items-center gap-3">
+                <input type="color" id="embedColorPicker" value="#9b59b6" oninput="onColorPickerChange(this.value)" class="w-10 h-10 rounded-lg cursor-pointer bg-transparent border-0 p-0">
+                <input type="text" id="embedColorHex" value="#9b59b6" maxlength="7" oninput="onColorHexChange(this.value)" class="w-28 bg-inputBg border border-cardBorder text-white text-xs font-mono rounded-lg px-3 py-2 focus:outline-none focus:border-pink-500">
+                
+                <!-- Quick Preset Pills -->
+                <div class="flex items-center gap-1.5">
+                  <button type="button" onclick="setEmbedColor('#9b59b6')" class="w-6 h-6 rounded-full bg-[#9b59b6] border border-white/20 hover:scale-110 transition" title="Asgard Mor"></button>
+                  <button type="button" onclick="setEmbedColor('#5865f2')" class="w-6 h-6 rounded-full bg-[#5865f2] border border-white/20 hover:scale-110 transition" title="Discord Blurple"></button>
+                  <button type="button" onclick="setEmbedColor('#2ecc71')" class="w-6 h-6 rounded-full bg-[#2ecc71] border border-white/20 hover:scale-110 transition" title="Zümrüt Yeşil"></button>
+                  <button type="button" onclick="setEmbedColor('#f1c40f')" class="w-6 h-6 rounded-full bg-[#f1c40f] border border-white/20 hover:scale-110 transition" title="Odin Altını"></button>
+                  <button type="button" onclick="setEmbedColor('#e74c3c')" class="w-6 h-6 rounded-full bg-[#e74c3c] border border-white/20 hover:scale-110 transition" title="Kırmızı"></button>
+                  <button type="button" onclick="setEmbedColor('#2f3136')" class="w-6 h-6 rounded-full bg-[#2f3136] border border-white/20 hover:scale-110 transition" title="Koyu Gri"></button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Title & URL -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-1.5">
+                  Başlık (Title)
+                </label>
+                <input type="text" id="embedTitle" oninput="updateEmbedPreview()" placeholder="Örn: ⚔️ ASGARD SUNUCU DUYURUSU" class="w-full bg-inputBg border border-cardBorder text-white text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-pink-500 font-semibold">
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-1.5">
+                  Başlık Linki (URL - Opsiyonel)
+                </label>
+                <input type="url" id="embedTitleUrl" oninput="updateEmbedPreview()" placeholder="https://..." class="w-full bg-inputBg border border-cardBorder text-white text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-pink-500">
+              </div>
+            </div>
+
+            <!-- Description -->
+            <div>
+              <div class="flex items-center justify-between mb-1.5">
+                <label class="block text-xs font-semibold text-gray-300 uppercase tracking-wider">
+                  Açıklama (Description)
+                </label>
+                <span class="text-[10px] text-gray-400">Markdown: **kalın**, *italik*, `kod`</span>
+              </div>
+              <textarea id="embedDescription" rows="5" oninput="updateEmbedPreview()" placeholder="Mesajınızın ana metnini buraya yazın..." class="w-full bg-inputBg border border-cardBorder text-white text-xs rounded-xl p-3 focus:outline-none focus:border-pink-500 leading-relaxed"></textarea>
+            </div>
+          </div>
+
+          <!-- Author & Images -->
+          <div class="bg-cardBg border border-cardBorder rounded-2xl p-6 shadow-xl space-y-4">
+            <h4 class="text-sm font-bold text-white flex items-center gap-2 pb-2 border-b border-cardBorder">
+              <i class="fa-solid fa-image text-indigo-400"></i>
+              Görseller & Yazar (Author)
+            </h4>
+
+            <!-- Author Name & Icon -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-1.5">
+                  Yazar Adı (Author Name)
+                </label>
+                <input type="text" id="embedAuthorName" oninput="updateEmbedPreview()" placeholder="Örn: Asgard Muhafızı" class="w-full bg-inputBg border border-cardBorder text-white text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-pink-500">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-1.5">
+                  Yazar İkon URL (Author Icon)
+                </label>
+                <input type="url" id="embedAuthorIcon" oninput="updateEmbedPreview()" placeholder="https://..." class="w-full bg-inputBg border border-cardBorder text-white text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-pink-500">
+              </div>
+            </div>
+
+            <!-- Thumbnail & Main Image Banner -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-1.5">
+                  Sağ Üst Küçük Resim (Thumbnail URL)
+                </label>
+                <input type="url" id="embedThumbnailUrl" oninput="updateEmbedPreview()" placeholder="https://..." class="w-full bg-inputBg border border-cardBorder text-white text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-pink-500">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-1.5">
+                  Alt Büyük Afiş / Banner (Image URL)
+                </label>
+                <input type="url" id="embedImageUrl" oninput="updateEmbedPreview()" placeholder="https://..." class="w-full bg-inputBg border border-cardBorder text-white text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-pink-500">
+              </div>
+            </div>
+          </div>
+
+          <!-- Dynamic Fields (Alanlar) -->
+          <div class="bg-cardBg border border-cardBorder rounded-2xl p-6 shadow-xl space-y-4">
+            <div class="flex items-center justify-between pb-2 border-b border-cardBorder">
+              <h4 class="text-sm font-bold text-white flex items-center gap-2">
+                <i class="fa-solid fa-table-cells-large text-green-400"></i>
+                Özel Alanlar (Fields)
+              </h4>
+              <button type="button" onclick="addEmbedField()" class="text-xs bg-green-500/20 hover:bg-green-500/30 text-green-300 border border-green-500/40 px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 active:scale-95">
+                <i class="fa-solid fa-plus text-[10px]"></i>
+                <span>Yeni Alan Ekle</span>
+              </button>
+            </div>
+
+            <div id="embedFieldsList" class="space-y-3">
+              <div class="text-xs text-gray-500 italic" id="noFieldsHint">Henüz özel alan eklenmedi.</div>
+            </div>
+          </div>
+
+          <!-- Footer & Timestamp -->
+          <div class="bg-cardBg border border-cardBorder rounded-2xl p-6 shadow-xl space-y-4">
+            <h4 class="text-sm font-bold text-white flex items-center gap-2 pb-2 border-b border-cardBorder">
+              <i class="fa-solid fa-shoe-prints text-yellow-400"></i>
+              Alt Bilgi (Footer) & Zaman Damgası
+            </h4>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-1.5">
+                  Footer Yazısı (Footer Text)
+                </label>
+                <input type="text" id="embedFooterText" oninput="updateEmbedPreview()" placeholder="Örn: Asgard Krallığı Duyuru Servisi" class="w-full bg-inputBg border border-cardBorder text-white text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-pink-500">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-1.5">
+                  Footer İkon URL
+                </label>
+                <input type="url" id="embedFooterIcon" oninput="updateEmbedPreview()" placeholder="https://..." class="w-full bg-inputBg border border-cardBorder text-white text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-pink-500">
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 pt-1">
+              <input type="checkbox" id="embedTimestamp" checked onchange="updateEmbedPreview()" class="w-4 h-4 rounded text-pink-500 focus:ring-0 cursor-pointer">
+              <label for="embedTimestamp" class="text-xs text-gray-300 font-medium cursor-pointer">
+                Güncel tarih / saat damgası ekle (Timestamp)
+              </label>
+            </div>
+          </div>
+
+          <!-- Bottom Action Buttons -->
+          <div class="flex flex-wrap items-center justify-between gap-3 pt-2">
+            <button onclick="copyEmbedJson()" class="flex items-center gap-2 bg-cardBg hover:bg-inputBg border border-cardBorder text-gray-300 hover:text-white text-xs font-bold px-4 py-2.5 rounded-xl transition">
+              <i class="fa-solid fa-copy"></i>
+              <span>Embed JSON Kopyala</span>
+            </button>
+
+            <button onclick="sendCustomEmbed()" id="sendEmbedBtn" class="flex items-center gap-2 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white text-xs font-bold px-6 py-3 rounded-xl transition shadow-lg shadow-pink-900/40 active:scale-95">
+              <i class="fa-solid fa-paper-plane"></i>
+              <span>Discord Kanalına Gönder</span>
+            </button>
+          </div>
+
+        </div>
+
+        <!-- Right: Live Discord Chat Simulation (5 cols) -->
+        <div class="lg:col-span-5">
+          <div class="bg-cardBg border border-cardBorder rounded-2xl p-6 shadow-xl sticky top-24 space-y-4">
+            
+            <div class="flex items-center justify-between pb-3 border-b border-cardBorder">
+              <div class="flex items-center gap-2">
+                <i class="fa-solid fa-eye text-pink-400 text-sm"></i>
+                <h4 class="text-sm font-bold text-white">Canlı Discord Önizlemesi</h4>
+              </div>
+              <span class="text-[10px] text-pink-300 bg-pink-500/20 px-2 py-0.5 rounded font-bold">GERÇEK ZAMANLI</span>
+            </div>
+
+            <!-- Simulated Discord Message -->
+            <div class="bg-[#313338] rounded-xl p-4 text-[#dbdee1] font-sans text-xs space-y-2.5 border border-white/5 shadow-inner">
+              
+              <!-- Message Author -->
+              <div class="flex items-center gap-2.5">
+                <img src="https://cdn.discordapp.com/avatars/1563523106788868236/ce9ca3d3274ff7f2ce57df61350d326c.png?size=128" alt="Bot Avatar" class="w-9 h-9 rounded-full object-cover border border-purple-500/40 shadow">
+                <div>
+                  <div class="flex items-center gap-1.5">
+                    <span class="font-bold text-white text-xs">Asgard Muhafızı</span>
+                    <span class="bg-[#5865f2] text-white text-[9px] font-bold px-1 rounded">BOT</span>
+                    <span class="text-[10px] text-gray-400">Bugün</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Outer Content Text -->
+              <div id="simOuterContent" class="pl-11 text-gray-200 hidden"></div>
+
+              <!-- Simulated Embed Box -->
+              <div id="simEmbedBox" class="ml-11 border-l-4 rounded-r-lg p-3.5 space-y-2 bg-[#2b2d31]" style="border-color: #9b59b6;">
+                
+                <!-- Author Preview -->
+                <div id="simAuthorBox" class="flex items-center gap-2 hidden">
+                  <img id="simAuthorIcon" src="" class="w-5 h-5 rounded-full object-cover hidden">
+                  <span id="simAuthorName" class="font-bold text-xs text-white"></span>
+                </div>
+
+                <!-- Title & Thumbnail Container -->
+                <div class="flex items-start justify-between gap-3">
+                  <div class="flex-1 space-y-1">
+                    <div id="simTitle" class="font-bold text-white text-sm break-words hidden"></div>
+                    <div id="simDescription" class="text-gray-300 text-[11px] leading-relaxed whitespace-pre-line break-words hidden"></div>
+                  </div>
+                  <img id="simThumbnail" src="" class="w-16 h-16 rounded object-cover shrink-0 hidden border border-white/10">
+                </div>
+
+                <!-- Fields Preview -->
+                <div id="simFieldsGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 hidden"></div>
+
+                <!-- Banner Image Preview -->
+                <img id="simBannerImage" src="" class="w-full max-h-56 rounded-md object-cover hidden border border-white/10">
+
+                <!-- Footer & Timestamp -->
+                <div id="simFooterBox" class="pt-2 border-t border-white/5 text-[10px] text-gray-400 flex items-center justify-between hidden">
+                  <div class="flex items-center gap-1.5">
+                    <img id="simFooterIcon" src="" class="w-4 h-4 rounded-full object-cover hidden">
+                    <span id="simFooterText"></span>
+                  </div>
+                  <span id="simTimestamp" class="text-[9px]"></span>
+                </div>
+
+              </div>
+
+            </div>
+
+            <p class="text-[11px] text-gray-400 text-center italic">
+              Metin, renk veya görsel ekledikçe önizleme canlı olarak güncellenir.
+            </p>
+
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    let currentGuildId = '';
+    let currentChannels = [];
+    let currentRoles = [];
+
+    // Switch Tabs
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('border-purple-500', 'text-purple-400');
+        btn.classList.add('border-transparent', 'text-gray-400');
+      });
+
+      const activeTab = document.getElementById(tabId);
+      if (activeTab) activeTab.classList.remove('hidden');
+
+      const activeBtn = document.getElementById('btn-' + tabId);
+      if (activeBtn) {
+        activeBtn.classList.remove('border-transparent', 'text-gray-400');
+        activeBtn.classList.add('border-purple-500', 'text-purple-400');
+      }
+    }
+
+    // Toast Alert
+    function showToast(message, isSuccess = true) {
+      const toast = document.getElementById('toast');
+      const icon = document.getElementById('toastIcon');
+      const msg = document.getElementById('toastMessage');
+
+      toast.className = `fixed bottom-6 right-6 z-50 max-w-md px-4 py-3 rounded-xl border shadow-2xl transition-all duration-300 flex items-center gap-3 ${
+        isSuccess ? 'bg-green-950/90 border-green-500/40 text-green-200' : 'bg-red-950/90 border-red-500/40 text-red-200'
+      }`;
+      icon.className = isSuccess ? 'fa-solid fa-circle-check text-green-400' : 'fa-solid fa-circle-exclamation text-red-400';
+      msg.textContent = message;
+      toast.classList.remove('hidden');
+
+      setTimeout(() => {
+        toast.classList.add('hidden');
+      }, 4000);
+    }
+
+    // Sync Dropdown -> Input
+    function syncManualInput(selectId, inputId) {
+      const select = document.getElementById(selectId);
+      const input = document.getElementById(inputId);
+      if (select && input) {
+        input.value = select.value;
+      }
+    }
+
+    // Sync Input -> Dropdown
+    function syncDropdown(selectId, value) {
+      const select = document.getElementById(selectId);
+      if (select) {
+        select.value = value || '';
+      }
+    }
+
+    // Initialize App
+    async function init() {
+      try {
+        const res = await fetch('/api/status');
+        const data = await res.json();
+
+        // Update MongoDB badge & alert banner
+        const mongoBadge = document.getElementById('mongoBadge');
+        const alertBanner = document.getElementById('mongoAlertBanner');
+        const errorDetail = document.getElementById('mongoErrorDetail');
+
+        if (data.mongoConnected) {
+          mongoBadge.innerHTML = `<span class="w-2.5 h-2.5 rounded-full bg-green-500"></span><span class="text-green-400 font-medium">MongoDB Bağlı</span>`;
+          if (alertBanner) alertBanner.classList.add('hidden');
+        } else {
+          mongoBadge.innerHTML = `<span class="w-2.5 h-2.5 rounded-full bg-red-500"></span><span class="text-red-400 font-medium">MongoDB Bağlantı Yok</span>`;
+          if (alertBanner) {
+            alertBanner.classList.remove('hidden');
+            if (errorDetail) {
+              errorDetail.textContent = data.mongoError || 'MongoDB sunucusu ile bağlantı kurulamadı (Zaman aşımı veya IP engeli).';
+            }
+          }
+        }
+
+        // Fetch Guilds list
+        await loadGuildsList(data.defaultGuildId);
+      } catch (err) {
+        showToast('Dashboard verisi alınamadı: ' + err.message, false);
+      }
+    }
+
+    // Load Guilds List into Header Selector
+    async function loadGuildsList(preferredGuildId) {
+      try {
+        const res = await fetch('/api/guilds');
+        const data = await res.json();
+        const guildSelect = document.getElementById('guildSelect');
+        const inviteLink = document.getElementById('inviteBotLink');
+
+        if (data.inviteUrl && inviteLink) {
+          inviteLink.href = data.inviteUrl;
+        }
+
+        const guilds = data.guilds || [];
+        guildSelect.innerHTML = '';
+
+        if (guilds.length === 0) {
+          guildSelect.innerHTML = '<option value="">Sunucu Bulunamadı</option>';
+          return;
+        }
+
+        guilds.forEach(g => {
+          guildSelect.innerHTML += `<option value="${g.id}">🏰 ${g.name}</option>`;
+        });
+
+        // Determine active guild
+        const activeId = preferredGuildId || data.defaultGuildId || (guilds[0] ? guilds[0].id : '');
+        currentGuildId = activeId;
+        guildSelect.value = activeId;
+        document.getElementById('guildIdInput').value = activeId;
+
+        await loadGuildData();
+      } catch (err) {
+        console.warn('Sunucu listesi çekilemedi:', err);
+      }
+    }
+
+    // When user selects a different guild from dropdown
+    function onGuildSelectChange(selectedGuildId) {
+      if (!selectedGuildId) return;
+      currentGuildId = selectedGuildId;
+      document.getElementById('guildIdInput').value = selectedGuildId;
+      const guildSelect = document.getElementById('guildSelect');
+      const selectedName = guildSelect.options[guildSelect.selectedIndex]?.text || selectedGuildId;
+
+      showToast(`${selectedName} seçildi, veriler yükleniyor...`, true);
+      loadGuildData();
+    }
+
+    // Prompt for entering a custom / manual Guild ID
+    function promptManualGuildId() {
+      const manualId = prompt('Yönetmek istediğiniz Discord Sunucusunun ID\'sini girin:');
+      if (!manualId || !manualId.trim()) return;
+
+      const cleanId = manualId.trim();
+      const guildSelect = document.getElementById('guildSelect');
+
+      // Check if already in options
+      let exists = false;
+      for (let i = 0; i < guildSelect.options.length; i++) {
+        if (guildSelect.options[i].value === cleanId) {
+          guildSelect.selectedIndex = i;
+          exists = true;
+          break;
+        }
+      }
+
+      if (!exists) {
+        const newOpt = document.createElement('option');
+        newOpt.value = cleanId;
+        newOpt.text = `🏰 Özel Sunucu (${cleanId.slice(0, 8)}...)`;
+        newOpt.selected = true;
+        guildSelect.appendChild(newOpt);
+      }
+
+      currentGuildId = cleanId;
+      document.getElementById('guildIdInput').value = cleanId;
+      showToast(`Yeni sunucu (${cleanId}) yüklendi!`, true);
+      loadGuildData();
+    }
+
+    // Load Guild Data (Channels, Roles & Settings)
+    async function loadGuildData() {
+      const inputGuildId = document.getElementById('guildIdInput').value.trim();
+      if (!inputGuildId) return;
+      currentGuildId = inputGuildId;
+
+      try {
+        // 1. Fetch Live Channels & Roles from Discord API
+        const guildRes = await fetch(`/api/guild-data?guildId=${currentGuildId}`);
+        const guildData = await guildRes.json();
+
+        const discordBadge = document.getElementById('discordStatusText');
+        if (guildData.discordApiAvailable) {
+          discordBadge.innerHTML = `<span class="text-green-400 font-medium">${guildData.guild?.name || 'Discord Bağlı'}</span>`;
+        } else {
+          discordBadge.innerHTML = `<span class="text-yellow-400 font-medium">Discord Çevrimdışı (Elle ID girilebilir)</span>`;
+        }
+
+        currentChannels = guildData.channels || [];
+        currentRoles = guildData.roles || [];
+
+        populateDropdowns();
+
+        // 2. Fetch Existing MongoDB Settings
+        const settingsRes = await fetch(`/api/settings?guildId=${currentGuildId}`);
+        const settingsData = await settingsRes.json();
+
+        if (settingsData.settings) {
+          applySettingsToUI(settingsData.settings);
+        }
+      } catch (err) {
+        showToast('Sunucu verisi yüklenirken hata: ' + err.message, false);
+      }
+    }
+
+    // Populate Select elements
+    function populateDropdowns() {
+      const textChannels = currentChannels.filter(c => c.type === 0 || c.type === 5);
+      const voiceChannels = currentChannels.filter(c => c.type === 2);
+
+      const channelSelectIds = [
+        'welcomeChannelSelect',
+        'modLogChannelSelect',
+        'approvalChannelSelect',
+        'rankLogChannelSelect',
+        'levelLogChannelSelect',
+        'embedTargetChannelSelect'
+      ];
+
+      channelSelectIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const currentVal = el.value;
+        el.innerHTML = '<option value="">Kanal Seçin veya elle ID girin...</option>';
+        textChannels.forEach(c => {
+          el.innerHTML += `<option value="${c.id}">💬 #${c.name} (${c.id})</option>`;
+        });
+        if (currentVal) el.value = currentVal;
+      });
+
+      // Voice Channel Select
+      const j2cSelect = document.getElementById('j2cChannelSelect');
+      if (j2cSelect) {
+        const currentVal = j2cSelect.value;
+        j2cSelect.innerHTML = '<option value="">Ses Kanalı Seçin...</option>';
+        voiceChannels.forEach(c => {
+          j2cSelect.innerHTML += `<option value="${c.id}">🔊 ${c.name} (${c.id})</option>`;
+        });
+        if (currentVal) j2cSelect.value = currentVal;
+      }
+
+      // Role Selects
+      const roleSelectIds = [
+        'autoRoleSelect',
+        'registeredRoleSelect',
+        'jailRoleSelect',
+        'staffRoleSelect'
+      ];
+
+      roleSelectIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const currentVal = el.value;
+        el.innerHTML = '<option value="">Rol Seçin veya elle ID girin...</option>';
+        currentRoles.forEach(r => {
+          el.innerHTML += `<option value="${r.id}">🛡️ ${r.name} (${r.id})</option>`;
+        });
+        if (currentVal) el.value = currentVal;
+      });
+    }
+
+    // Apply Settings to UI
+    function applySettingsToUI(s) {
+      document.getElementById('prefixInput').value = s.prefix || '!';
+      document.getElementById('previewPrefix1').textContent = `${s.prefix || '!'}kayit [İsim]`;
+
+      // Welcome
+      document.getElementById('welcomeChannelInput').value = s.welcomeChannelId || '';
+      syncDropdown('welcomeChannelSelect', s.welcomeChannelId);
+
+      // Roles
+      document.getElementById('autoRoleInput').value = s.autoRoleId || s.unverifiedRoleId || '';
+      syncDropdown('autoRoleSelect', s.autoRoleId || s.unverifiedRoleId);
+
+      document.getElementById('registeredRoleInput').value = s.registeredRoleId || '';
+      syncDropdown('registeredRoleSelect', s.registeredRoleId);
+
+      document.getElementById('jailRoleInput').value = s.jailRoleId || '';
+      syncDropdown('jailRoleSelect', s.jailRoleId);
+
+      // Staff Roles
+      if (Array.isArray(s.staffRoleIds)) {
+        document.getElementById('staffRoleIdsInput').value = s.staffRoleIds.join(', ');
+      }
+
+      // Logs
+      document.getElementById('modLogChannelInput').value = s.modLogChannelId || '';
+      syncDropdown('modLogChannelSelect', s.modLogChannelId);
+
+      document.getElementById('approvalChannelInput').value = s.approvalChannelId || '';
+      syncDropdown('approvalChannelSelect', s.approvalChannelId);
+
+      document.getElementById('rankLogChannelInput').value = s.rankLogChannelId || '';
+      syncDropdown('rankLogChannelSelect', s.rankLogChannelId);
+
+      document.getElementById('levelLogChannelInput').value = s.levelLogChannelId || '';
+      syncDropdown('levelLogChannelSelect', s.levelLogChannelId);
+
+      // Voice
+      document.getElementById('j2cChannelInput').value = s.joinToCreateChannelId || '';
+      syncDropdown('j2cChannelSelect', s.joinToCreateChannelId);
+
+      // Devs & Safe Whitelist
+      if (Array.isArray(s.developerUserIds)) {
+        document.getElementById('developerIdsInput').value = s.developerUserIds.join(', ');
+      }
+      if (Array.isArray(s.safeUserIds)) {
+        document.getElementById('safeUserIdsInput').value = s.safeUserIds.join(', ');
+      }
+
+      // Hem 5 Seviye Rolünü Hem de 10 Asgard Rütbesini Birlikte Render Et
+      renderLevelRolesUI(s.levelRoles || []);
+      renderAsgardRanksUI(s.ranks || []);
+    }
+
+    // Helper: Add staff role from select dropdown into comma-separated input
+    function addStaffRoleFromSelect(roleId) {
+      if (!roleId) return;
+      const input = document.getElementById('staffRoleIdsInput');
+      const currentList = input.value
+        .split(',')
+        .map(id => id.trim())
+        .filter(Boolean);
+      
+      if (!currentList.includes(roleId)) {
+        currentList.push(roleId);
+        input.value = currentList.join(', ');
+        showToast('Yetkili rolü listeye eklendi.', true);
+      }
+      document.getElementById('staffRoleSelect').value = '';
+    }
+
+    // 1. Render Milestone Level Roles UI (10, 20, 30, 40, 50 MAX)
+    function renderLevelRolesUI(milestones) {
+      const container = document.getElementById('levelRolesGrid');
+      if (!container) return;
+
+      // Default fallback definitions if empty
+      const defaultMilestones = [
+        { level: 10, name: 'Seviye 10', perk: 'GIF & Harici Sticker Kullanabilme', color: '#3498db' },
+        { level: 20, name: 'Seviye 20', perk: 'Görsel & Resim Paylaşma Yetkisi', color: '#2ecc71' },
+        { level: 30, name: 'Seviye 30', perk: 'Bağlantı (Link) Paylaşma Yetkisi', color: '#9b59b6' },
+        { level: 40, name: 'Seviye 40', perk: '1080p/60FPS Canlı Yayın Açma & Ses Yetkisi', color: '#e67e22' },
+        { level: 50, name: 'Seviye 50 [MAX]', perk: 'Asgard Şampiyonu, Öncelikli Konuşmacı & VIP', color: '#f1c40f' }
+      ];
+
+      const listToRender = (Array.isArray(milestones) && milestones.length > 0) ? milestones : defaultMilestones;
+      container.innerHTML = '';
+
+      listToRender.forEach(m => {
+        const lvl = m.level;
+        const name = m.name || `Seviye ${lvl}`;
+        const perk = m.perk || 'Özel Seviye Ayrıcalığı';
+        const color = m.color || '#eab308';
+        const roleId = m.roleId || '';
+
+        let roleOptionsHtml = '<option value="">Rol Seçin veya elle ID girin...</option>';
+        currentRoles.forEach(role => {
+          const isSelected = (roleId === role.id) ? 'selected' : '';
+          roleOptionsHtml += `<option value="${role.id}" ${isSelected}>🛡️ ${role.name} (${role.id})</option>`;
+        });
+
+        const card = document.createElement('div');
+        card.className = 'bg-cardBg border border-cardBorder rounded-2xl p-4 shadow-xl space-y-3 relative overflow-hidden';
+        card.innerHTML = `
+          <div class="flex items-center justify-between pb-2 border-b border-cardBorder">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl flex items-center justify-center font-extrabold text-white text-sm shadow-md" style="background-color: ${color};">
+                ${lvl}
+              </div>
+              <div>
+                <div class="font-bold text-white text-sm flex items-center gap-2">
+                  <span>${name}</span>
+                  <span class="text-[10px] px-2 py-0.5 rounded-full font-mono font-bold" style="background-color: ${color}22; color: ${color}; border: 1px solid ${color}55;">
+                    LVL ${lvl}
+                  </span>
+                </div>
+                <p class="text-[11px] text-yellow-300 mt-0.5 font-medium">
+                  <i class="fa-solid fa-gift text-yellow-400 mr-1"></i>${perk}
+                </p>
+              </div>
+            </div>
+            <span class="text-[10px] uppercase font-bold px-2 py-1 bg-yellow-500/10 text-yellow-300 rounded border border-yellow-500/20">Seviye Yetkisi</span>
+          </div>
+
+          <div class="space-y-2">
+            <label class="block text-xs font-semibold text-gray-300 uppercase tracking-wider">
+              Discord Seviye Rolü:
+            </label>
+            <select id="levelRoleSelect_${lvl}" onchange="syncManualInput('levelRoleSelect_${lvl}', 'levelRoleInput_${lvl}')" class="w-full bg-inputBg border border-cardBorder text-white text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-yellow-500">
+              ${roleOptionsHtml}
+            </select>
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-gray-500">Rol ID:</span>
+              <input type="text" id="levelRoleInput_${lvl}" value="${roleId}" placeholder="Rol ID girin" class="flex-1 bg-inputBg border border-cardBorder text-xs text-gray-300 rounded-lg px-2.5 py-1.5 font-mono focus:outline-none focus:border-yellow-500">
+              <input type="hidden" id="levelRoleName_${lvl}" value="${name}">
+              <input type="hidden" id="levelRolePerk_${lvl}" value="${perk}">
+              <input type="hidden" id="levelRoleColor_${lvl}" value="${color}">
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // 2. Render 10 Asgard Ranks UI (1-10)
+    function renderAsgardRanksUI(ranks) {
+      const container = document.getElementById('asgardRanksGrid');
+      if (!container) return;
+
+      const defaultAsgardRanks = [
+        { rank: 1, name: 'Thrall (Yeni Savaşçı)', color: '#95a5a6', requiredWeeklyXp: 0, perks: ['Genel Sohbet & Sesli Kanallara Erişim'] },
+        { rank: 2, name: 'Karl (Özgür Üye)', color: '#3498db', requiredWeeklyXp: 500, perks: ['Görsel & Resim Gönderme', 'Özel Kanallar'] },
+        { rank: 3, name: 'Berserker (Yırtıcı)', color: '#e67e22', requiredWeeklyXp: 1200, perks: ['Harici Emoji & Sticker', 'GIF Paylaşabilme'] },
+        { rank: 4, name: 'Hersir (Akıncı)', color: '#2ecc71', requiredWeeklyXp: 2200, perks: ['Bağlantı (Link) Paylaşabilme'] },
+        { rank: 5, name: 'Thegn (Muhafız)', color: '#1abc9c', requiredWeeklyXp: 3500, perks: ['Yayında 1080p/60FPS Açabilme'] },
+        { rank: 6, name: 'Jarl (Soylu Savaşçı)', color: '#9b59b6', requiredWeeklyXp: 5000, perks: ['Çekilişlerde 2x Şans', 'Kamera Önceliği'] },
+        { rank: 7, name: 'Einherjar (Valhalla Seçilmişi)', color: '#e74c3c', requiredWeeklyXp: 7000, perks: ['Öncelikli Konuşmacı', 'Valhalla Özel Sohbet'] },
+        { rank: 8, name: 'Valkyrie (Kader Rehberi)', color: '#fd79a8', requiredWeeklyXp: 9500, perks: ['Çekilişlerde 3x Şans', 'Sesli Oda Yönetimi'] },
+        { rank: 9, name: 'Aesir (Tanrılar Meclisi)', color: '#f39c12', requiredWeeklyXp: 13000, perks: ['Rehberlik Rozeti', 'Özel VIP Ses Odası'] },
+        { rank: 10, name: 'Odin\'s Champion (Asgard Şampiyonu)', color: '#f1c40f', requiredWeeklyXp: 18000, perks: ['Tüm Ayrıcalıklar Açık', 'Efsanevi Asgard Tacı', 'VIP Destek'] }
+      ];
+
+      const listToRender = (Array.isArray(ranks) && ranks.length > 0) ? ranks : defaultAsgardRanks;
+      container.innerHTML = '';
+
+      listToRender.forEach(r => {
+        const rankNum = r.rank;
+        const name = r.name || `Rütbe ${rankNum}`;
+        const perks = Array.isArray(r.perks) ? r.perks.join(' • ') : (r.perk || 'Temel Asgard Ayrıcalıkları');
+        const color = r.color || '#9b59b6';
+        const roleId = r.roleId || '';
+        const xpReq = r.requiredWeeklyXp ? `${r.requiredWeeklyXp.toLocaleString()} XP/hf` : 'Başlangıç';
+
+        let roleOptionsHtml = '<option value="">Rol Seçin veya elle ID girin...</option>';
+        currentRoles.forEach(role => {
+          const isSelected = (roleId === role.id) ? 'selected' : '';
+          roleOptionsHtml += `<option value="${role.id}" ${isSelected}>🛡️ ${role.name} (${role.id})</option>`;
+        });
+
+        const card = document.createElement('div');
+        card.className = 'bg-cardBg border border-cardBorder rounded-2xl p-4 shadow-xl space-y-3 relative overflow-hidden';
+        card.innerHTML = `
+          <div class="flex items-center justify-between pb-2 border-b border-cardBorder">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl flex items-center justify-center font-extrabold text-white text-sm shadow-md" style="background-color: ${color};">
+                ${rankNum}
+              </div>
+              <div>
+                <div class="font-bold text-white text-sm flex items-center gap-2">
+                  <span>${name}</span>
+                  <span class="text-[10px] px-2 py-0.5 rounded-full font-mono font-bold" style="background-color: ${color}22; color: ${color}; border: 1px solid ${color}55;">
+                    Rütbe ${rankNum}
+                  </span>
+                </div>
+                <p class="text-[11px] text-gray-300 mt-0.5">
+                  <i class="fa-solid fa-sparkles text-purple-400 mr-1"></i>${perks}
+                </p>
+              </div>
+            </div>
+            <span class="text-[10px] uppercase font-bold px-2 py-1 bg-purple-500/10 text-purple-300 rounded border border-purple-500/20">${xpReq}</span>
+          </div>
+
+          <div class="space-y-2">
+            <label class="block text-xs font-semibold text-gray-300 uppercase tracking-wider">
+              Discord Rütbe Rolü:
+            </label>
+            <select id="asgardRankRoleSelect_${rankNum}" onchange="syncManualInput('asgardRankRoleSelect_${rankNum}', 'asgardRankRoleInput_${rankNum}')" class="w-full bg-inputBg border border-cardBorder text-white text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-purple-500">
+              ${roleOptionsHtml}
+            </select>
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-gray-500">Rol ID:</span>
+              <input type="text" id="asgardRankRoleInput_${rankNum}" value="${roleId}" placeholder="Rol ID girin" class="flex-1 bg-inputBg border border-cardBorder text-xs text-gray-300 rounded-lg px-2.5 py-1.5 font-mono focus:outline-none focus:border-purple-500">
+              <input type="hidden" id="asgardRankName_${rankNum}" value="${name}">
+              <input type="hidden" id="asgardRankColor_${rankNum}" value="${color}">
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // Auto Setup 10 Ranks in Discord
+    async function autoSetupRanks() {
+      if (!confirm('10 Asgard rütbe rolü Discord sunucunuzda otomatik oluşturulacak veya var olanlar eşleştirilecek. Devam edilsin mi?')) return;
+
+      const btn = document.getElementById('autoRanksBtn');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i><span>Discord'da Oluşturuluyor...</span>`;
+      btn.disabled = true;
+
+      try {
+        const res = await fetch('/api/auto-setup-ranks', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ guildId: currentGuildId })
+        });
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          showToast('🎉 10 Asgard rütbesi Discord üzerinde başarıyla oluşturuldu ve eşleştirildi!', true);
+          await loadGuildData();
+        } else {
+          showToast('Hata: ' + (data.error || 'Rütbeler kurulamadı'), false);
+        }
+      } catch (err) {
+        showToast('Bağlantı hatası: ' + err.message, false);
+      } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+      }
+    }
+
+    // Full Auto Setup (Ranks + System Roles + Channels)
+    async function fullSetup() {
+      if (!confirm('Tüm Asgard rolleri (10 rütbe, kayıtsız, jail, üye) ve kanalları (hoş-geldin, loglar, geçici ses odası) otomatik oluşturulacak. Devam edilsin mi?')) return;
+
+      const btn = document.getElementById('fullSetupBtn');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i><span>Tam Kurulum Yapılıyor...</span>`;
+      btn.disabled = true;
+
+      try {
+        const res = await fetch('/api/full-setup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ guildId: currentGuildId })
+        });
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          showToast('🚀 Tam Asgard sunucu kurulumu başarıyla tamamlandı!', true);
+          await loadGuildData();
+        } else {
+          showToast('Kurulum hatası: ' + (data.error || 'İşlem tamamlanamadı'), false);
+        }
+      } catch (err) {
+        showToast('Bağlantı hatası: ' + err.message, false);
+      } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+      }
+    }
+
+    // Save All Settings
+    async function saveAllSettings() {
+      const saveBtn = document.getElementById('saveBtn');
+      const originalText = saveBtn.innerHTML;
+      saveBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i><span>Kaydediliyor...</span>`;
+      saveBtn.disabled = true;
+
+      const payload = {
+        guildId: currentGuildId,
+        prefix: document.getElementById('prefixInput').value.trim() || '!',
+        welcomeChannelId: document.getElementById('welcomeChannelInput').value.trim() || null,
+        autoRoleId: document.getElementById('autoRoleInput').value.trim() || null,
+        registeredRoleId: document.getElementById('registeredRoleInput').value.trim() || null,
+        jailRoleId: document.getElementById('jailRoleInput').value.trim() || null,
+        modLogChannelId: document.getElementById('modLogChannelInput').value.trim() || null,
+        approvalChannelId: document.getElementById('approvalChannelInput').value.trim() || null,
+        rankLogChannelId: document.getElementById('rankLogChannelInput').value.trim() || null,
+        levelLogChannelId: document.getElementById('levelLogChannelInput').value.trim() || null,
+        joinToCreateChannelId: document.getElementById('j2cChannelInput').value.trim() || null,
+        developerUserIds: document.getElementById('developerIdsInput').value
+          .split(',')
+          .map(id => id.trim())
+          .filter(Boolean),
+        safeUserIds: (document.getElementById('safeUserIdsInput')?.value || '')
+          .split(',')
+          .map(id => id.trim())
+          .filter(Boolean),
+        staffRoleIds: (document.getElementById('staffRoleIdsInput')?.value || '')
+          .split(',')
+          .map(id => id.trim())
+          .filter(Boolean),
+        levelRoles: [],
+        ranks: []
+      };
+
+      // Collect Milestone Level Roles (10, 20, 30, 40, 50 MAX)
+      [10, 20, 30, 40, 50].forEach(lvl => {
+        const input = document.getElementById(`levelRoleInput_${lvl}`);
+        const nameInput = document.getElementById(`levelRoleName_${lvl}`);
+        const perkInput = document.getElementById(`levelRolePerk_${lvl}`);
+        const colorInput = document.getElementById(`levelRoleColor_${lvl}`);
+        if (input) {
+          payload.levelRoles.push({
+            level: lvl,
+            roleId: input.value.trim() || null,
+            name: nameInput ? nameInput.value : `Seviye ${lvl}`,
+            perk: perkInput ? perkInput.value : '',
+            color: colorInput ? colorInput.value : '#eab308'
+          });
+        }
+      });
+
+      // Collect 10 Asgard Ranks (1'den 10'a Kadar)
+      for (let i = 1; i <= 10; i++) {
+        const input = document.getElementById(`asgardRankRoleInput_${i}`);
+        const nameInput = document.getElementById(`asgardRankName_${i}`);
+        if (input) {
+          payload.ranks.push({
+            rank: i,
+            roleId: input.value.trim() || null,
+            name: nameInput ? nameInput.value : `Rütbe ${i}`
+          });
+        }
+      }
+
+      try {
+        const res = await fetch('/api/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          showToast('✅ Ayarlar MongoDB veri tabanına başarıyla kaydedildi!', true);
+          saveBtn.innerHTML = `<i class="fa-solid fa-check"></i><span>Kaydedildi!</span>`;
+          setTimeout(() => {
+            saveBtn.innerHTML = originalText;
+            saveBtn.disabled = false;
+          }, 2000);
+        } else {
+          showToast('Hata: ' + (data.error || 'Ayarlar kaydedilemedi'), false);
+          saveBtn.innerHTML = originalText;
+          saveBtn.disabled = false;
+        }
+      } catch (err) {
+        showToast('Bağlantı hatası: ' + err.message, false);
+        saveBtn.innerHTML = originalText;
+        saveBtn.disabled = false;
+      }
+    }
+
+    // Send Real Test Welcome Message to Discord
+    async function sendTestWelcome() {
+      const channelId = document.getElementById('welcomeChannelInput').value.trim();
+      if (!channelId) {
+        showToast('Lütfen önce bir hoş geldin kanalı seçin veya ID girin!', false);
+        return;
+      }
+
+      const btn = document.getElementById('testWelcomeBtn');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i><span>Gönderiliyor...</span>`;
+      btn.disabled = true;
+
+      try {
+        const res = await fetch('/api/test-welcome', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            channelId,
+            prefix: document.getElementById('prefixInput').value.trim() || '!'
+          })
+        });
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          showToast('🎉 Test hoş geldin mesajı başarıyla Discord kanalına gönderildi!', true);
+        } else {
+          showToast('Mesaj gönderilemedi: ' + (data.error || 'Bilinmeyen hata'), false);
+        }
+      } catch (err) {
+        showToast('Hata: ' + err.message, false);
+      } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+      }
+    }
+
+    // Live update preview prefix
+    document.getElementById('prefixInput').addEventListener('input', (e) => {
+      const p = e.target.value.trim() || '!';
+      document.getElementById('previewPrefix1').textContent = `${p}kayit [İsim]`;
+    });
+
+    // ==========================================
+    // EMBED BUILDER JAVASCRIPT LOGIC (BETA)
+    // ==========================================
+    let embedFields = [];
+
+    function setEmbedColor(hex) {
+      document.getElementById('embedColorPicker').value = hex;
+      document.getElementById('embedColorHex').value = hex;
+      updateEmbedPreview();
+    }
+
+    function onColorPickerChange(val) {
+      document.getElementById('embedColorHex').value = val;
+      updateEmbedPreview();
+    }
+
+    function onColorHexChange(val) {
+      if (/^#[0-9A-F]{6}$/i.test(val)) {
+        document.getElementById('embedColorPicker').value = val;
+      }
+      updateEmbedPreview();
+    }
+
+    function addEmbedField(name = '', value = '', inline = false) {
+      embedFields.push({ name, value, inline });
+      renderEmbedFields();
+      updateEmbedPreview();
+    }
+
+    function removeEmbedField(index) {
+      embedFields.splice(index, 1);
+      renderEmbedFields();
+      updateEmbedPreview();
+    }
+
+    function renderEmbedFields() {
+      const container = document.getElementById('embedFieldsList');
+      if (embedFields.length === 0) {
+        container.innerHTML = '<div class="text-xs text-gray-500 italic" id="noFieldsHint">Henüz özel alan eklenmedi.</div>';
+        return;
+      }
+
+      container.innerHTML = '';
+      embedFields.forEach((field, idx) => {
+        const item = document.createElement('div');
+        item.className = 'bg-inputBg border border-cardBorder rounded-xl p-3 space-y-2 relative';
+        item.innerHTML = `
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-bold text-gray-400">Alan #${idx + 1}</span>
+            <div class="flex items-center gap-2">
+              <label class="text-[11px] text-gray-300 flex items-center gap-1 cursor-pointer">
+                <input type="checkbox" ${field.inline ? 'checked' : ''} onchange="embedFields[${idx}].inline = this.checked; updateEmbedPreview();" class="rounded text-pink-500 cursor-pointer">
+                <span>Yan yana (Inline)</span>
+              </label>
+              <button type="button" onclick="removeEmbedField(${idx})" class="text-red-400 hover:text-red-300 text-xs p-1" title="Alanı Sil">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </div>
+          </div>
+          <input type="text" placeholder="Alan Başlığı (Örn: Yetki, Şart)" value="${field.name}" oninput="embedFields[${idx}].name = this.value; updateEmbedPreview();" class="w-full bg-cardBg border border-cardBorder text-white text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-pink-500 font-semibold">
+          <textarea rows="2" placeholder="Alan İçeriği (Örn: Bu alana izin verilir)" oninput="embedFields[${idx}].value = this.value; updateEmbedPreview();" class="w-full bg-cardBg border border-cardBorder text-white text-xs rounded-lg p-2 focus:outline-none focus:border-pink-500">${field.value}</textarea>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    function updateEmbedPreview() {
+      const color = document.getElementById('embedColorHex').value || '#9b59b6';
+      const outerContent = document.getElementById('embedOuterContent').value;
+      const title = document.getElementById('embedTitle').value;
+      const titleUrl = document.getElementById('embedTitleUrl').value;
+      const desc = document.getElementById('embedDescription').value;
+      const authorName = document.getElementById('embedAuthorName').value;
+      const authorIcon = document.getElementById('embedAuthorIcon').value;
+      const thumbUrl = document.getElementById('embedThumbnailUrl').value;
+      const imgUrl = document.getElementById('embedImageUrl').value;
+      const footerText = document.getElementById('embedFooterText').value;
+      const footerIcon = document.getElementById('embedFooterIcon').value;
+      const hasTimestamp = document.getElementById('embedTimestamp').checked;
+
+      // Color
+      document.getElementById('simEmbedBox').style.borderColor = color;
+
+      // Outer content
+      const simOuter = document.getElementById('simOuterContent');
+      if (outerContent.trim()) {
+        simOuter.textContent = outerContent;
+        simOuter.classList.remove('hidden');
+      } else {
+        simOuter.classList.add('hidden');
+      }
+
+      // Author
+      const simAuthorBox = document.getElementById('simAuthorBox');
+      const simAuthorName = document.getElementById('simAuthorName');
+      const simAuthorIcon = document.getElementById('simAuthorIcon');
+      if (authorName.trim()) {
+        simAuthorName.textContent = authorName;
+        if (authorIcon.trim()) {
+          simAuthorIcon.src = authorIcon;
+          simAuthorIcon.classList.remove('hidden');
+        } else {
+          simAuthorIcon.classList.add('hidden');
+        }
+        simAuthorBox.classList.remove('hidden');
+      } else {
+        simAuthorBox.classList.add('hidden');
+      }
+
+      // Title
+      const simTitle = document.getElementById('simTitle');
+      if (title.trim()) {
+        if (titleUrl.trim()) {
+          simTitle.innerHTML = `<a href="${titleUrl}" target="_blank" class="text-[#00a8fc] hover:underline">${title}</a>`;
+        } else {
+          simTitle.textContent = title;
+        }
+        simTitle.classList.remove('hidden');
+      } else {
+        simTitle.classList.add('hidden');
+      }
+
+      // Description
+      const simDesc = document.getElementById('simDescription');
+      if (desc.trim()) {
+        simDesc.textContent = desc;
+        simDesc.classList.remove('hidden');
+      } else {
+        simDesc.classList.add('hidden');
+      }
+
+      // Thumbnail
+      const simThumb = document.getElementById('simThumbnail');
+      if (thumbUrl.trim()) {
+        simThumb.src = thumbUrl;
+        simThumb.classList.remove('hidden');
+      } else {
+        simThumb.classList.add('hidden');
+      }
+
+      // Image
+      const simBanner = document.getElementById('simBannerImage');
+      if (imgUrl.trim()) {
+        simBanner.src = imgUrl;
+        simBanner.classList.remove('hidden');
+      } else {
+        simBanner.classList.add('hidden');
+      }
+
+      // Fields
+      const simFields = document.getElementById('simFieldsGrid');
+      const activeFields = embedFields.filter(f => f.name.trim() || f.value.trim());
+      if (activeFields.length > 0) {
+        simFields.innerHTML = '';
+        activeFields.forEach(f => {
+          const colClass = f.inline ? 'col-span-1' : 'col-span-full';
+          simFields.innerHTML += `
+            <div class="${colClass} space-y-0.5">
+              <div class="font-bold text-white text-[11px]">${f.name || 'Alan'}</div>
+              <div class="text-gray-300 text-[10px] whitespace-pre-line">${f.value || ''}</div>
+            </div>
+          `;
+        });
+        simFields.classList.remove('hidden');
+      } else {
+        simFields.classList.add('hidden');
+      }
+
+      // Footer
+      const simFooterBox = document.getElementById('simFooterBox');
+      const simFooterText = document.getElementById('simFooterText');
+      const simFooterIcon = document.getElementById('simFooterIcon');
+      const simTimestamp = document.getElementById('simTimestamp');
+
+      if (footerText.trim() || hasTimestamp) {
+        simFooterText.textContent = footerText;
+        if (footerIcon.trim()) {
+          simFooterIcon.src = footerIcon;
+          simFooterIcon.classList.remove('hidden');
+        } else {
+          simFooterIcon.classList.add('hidden');
+        }
+        if (hasTimestamp) {
+          simTimestamp.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        } else {
+          simTimestamp.textContent = '';
+        }
+        simFooterBox.classList.remove('hidden');
+      } else {
+        simFooterBox.classList.add('hidden');
+      }
+    }
+
+    function buildEmbedPayload() {
+      const color = document.getElementById('embedColorHex').value || '#9b59b6';
+      const title = document.getElementById('embedTitle').value.trim();
+      const titleUrl = document.getElementById('embedTitleUrl').value.trim();
+      const desc = document.getElementById('embedDescription').value.trim();
+      const authorName = document.getElementById('embedAuthorName').value.trim();
+      const authorIcon = document.getElementById('embedAuthorIcon').value.trim();
+      const thumbUrl = document.getElementById('embedThumbnailUrl').value.trim();
+      const imgUrl = document.getElementById('embedImageUrl').value.trim();
+      const footerText = document.getElementById('embedFooterText').value.trim();
+      const footerIcon = document.getElementById('embedFooterIcon').value.trim();
+      const hasTimestamp = document.getElementById('embedTimestamp').checked;
+
+      const embed = {
+        color: color
+      };
+
+      if (title) embed.title = title;
+      if (titleUrl) embed.url = titleUrl;
+      if (desc) embed.description = desc;
+      if (authorName) embed.author = { name: authorName, icon_url: authorIcon || undefined };
+      if (thumbUrl) embed.thumbnail = { url: thumbUrl };
+      if (imgUrl) embed.image = { url: imgUrl };
+      if (footerText) embed.footer = { text: footerText, icon_url: footerIcon || undefined };
+      if (hasTimestamp) embed.timestamp = new Date().toISOString();
+
+      const activeFields = embedFields
+        .filter(f => f.name.trim() && f.value.trim())
+        .map(f => ({ name: f.name.trim(), value: f.value.trim(), inline: !!f.inline }));
+
+      if (activeFields.length > 0) embed.fields = activeFields;
+      return embed;
+    }
+
+    async function sendCustomEmbed() {
+      const channelSelect = document.getElementById('embedTargetChannelSelect');
+      const channelId = channelSelect.value;
+      if (!channelId) {
+        showToast('Lütfen önce mesajın gönderileceği bir kanal seçin!', false);
+        return;
+      }
+
+      const embed = buildEmbedPayload();
+      if (!embed.title && !embed.description && (!embed.fields || embed.fields.length === 0) && !embed.image) {
+        showToast('Embed için en az bir başlık veya açıklama girmelisiniz!', false);
+        return;
+      }
+
+      const outerContent = document.getElementById('embedOuterContent').value;
+      const btn = document.getElementById('sendEmbedBtn');
+      const origText = btn.innerHTML;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i><span>Gönderiliyor...</span>`;
+      btn.disabled = true;
+
+      try {
+        const res = await fetch('/api/send-embed', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            channelId,
+            content: outerContent,
+            embed
+          })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          showToast('🎉 Özel Embed mesajı başarıyla Discord kanalına gönderildi!', true);
+        } else {
+          showToast('Hata: ' + (data.error || 'Mesaj gönderilemedi'), false);
+        }
+      } catch (err) {
+        showToast('Bağlantı hatası: ' + err.message, false);
+      } finally {
+        btn.innerHTML = origText;
+        btn.disabled = false;
+      }
+    }
+
+    function copyEmbedJson() {
+      const embed = buildEmbedPayload();
+      navigator.clipboard.writeText(JSON.stringify(embed, null, 2)).then(() => {
+        showToast('📋 Embed JSON panoya kopyalandı!', true);
+      }).catch(err => {
+        showToast('Kopyalama hatası: ' + err.message, false);
+      });
+    }
+
+    function applyEmbedTemplate(tpl) {
+      if (!tpl || tpl === 'clear') {
+        document.getElementById('embedTitle').value = '';
+        document.getElementById('embedTitleUrl').value = '';
+        document.getElementById('embedDescription').value = '';
+        document.getElementById('embedAuthorName').value = '';
+        document.getElementById('embedAuthorIcon').value = '';
+        document.getElementById('embedThumbnailUrl').value = '';
+        document.getElementById('embedImageUrl').value = '';
+        document.getElementById('embedFooterText').value = '';
+        document.getElementById('embedFooterIcon').value = '';
+        document.getElementById('embedOuterContent').value = '';
+        embedFields = [];
+        renderEmbedFields();
+        setEmbedColor('#9b59b6');
+        return;
+      }
+
+      if (tpl === 'announcement') {
+        setEmbedColor('#e74c3c');
+        document.getElementById('embedOuterContent').value = '@everyone';
+        document.getElementById('embedAuthorName').value = '📢 Asgard Yönetim Kurulu';
+        document.getElementById('embedTitle').value = '⚔️ ÖNEMLİ SUNUCU GÜNCELLEMESİ VE DUYURU';
+        document.getElementById('embedDescription').value = 'Değerli Asgard Diyarı sakinleri,\n\nSunucumuzda yeni güvenlik protokolleri ve Asgard 10 Rütbe sistemi aktif edilmiştir. Tüm üyelerimizin kurallara uymasını rica ederiz.';
+        document.getElementById('embedFooterText').value = 'Asgard Muhafız Birliği';
+        embedFields = [
+          { name: '🛡️ Güvenlik Güncellemesi', value: 'Developer onay sistemi devreye alındı.', inline: true },
+          { name: '👑 Rütbe Sistemi', value: 'Ses ve sohbette XP kazanarak yükselebilirsiniz.', inline: true }
+        ];
+        renderEmbedFields();
+        updateEmbedPreview();
+      } else if (tpl === 'rules') {
+        setEmbedColor('#3498db');
+        document.getElementById('embedOuterContent').value = '';
+        document.getElementById('embedAuthorName').value = '📜 Asgard Yasaları';
+        document.getElementById('embedTitle').value = '⚖️ SUNUCU VE TOPLULUK KURALLARI';
+        document.getElementById('embedDescription').value = 'Asgard topraklarında huzur ve saygıyı korumak adına tüm savaşçıların aşağıdaki kurallara riayet etmesi zorunludur.';
+        document.getElementById('embedFooterText').value = 'Adalet ve Düzen Konseyi';
+        embedFields = [
+          { name: '1. Saygı ve Hoşgörü', value: 'Hiçbir üyeye hakaret, küfür veya aşağılayıcı tutum sergilenemez.', inline: false },
+          { name: '2. Reklam & Spam Yasağı', value: 'Özelden veya kanallardan yetkisiz bağlantı paylaşımı yasaktır.', inline: false },
+          { name: '3. Kayıt Protokolü', value: 'Kayıtsız üyeler !kayit [İsim] komutu ile onay almalıdır.', inline: false }
+        ];
+        renderEmbedFields();
+        updateEmbedPreview();
+      } else if (tpl === 'ranks') {
+        setEmbedColor('#f1c40f');
+        document.getElementById('embedOuterContent').value = '';
+        document.getElementById('embedAuthorName').value = '⚔️ Asgard Rütbe Sistemi';
+        document.getElementById('embedTitle').value = '🏆 10 ASGARD RÜTBESİ VE GÖREV REHBERİ';
+        document.getElementById('embedDescription').value = 'Sunucumuzda vakit geçirerek kademe atlayabilir, özel yetkiler ve renkli rütbe rolleri kazanabilirsiniz!';
+        document.getElementById('embedFooterText').value = 'Haftalık otomatik sıfırlama ve kontrol';
+        embedFields = [
+          { name: 'Rütbe 1-3: Çırak & Özgür', value: 'Görsel paylaşımı, GIF ve harici emoji ayrıcalıkları.', inline: true },
+          { name: 'Rütbe 4-6: Akıncı & Soylu', value: 'Link yetkisi, 1080p 60FPS yayın ve özel kanallar.', inline: true },
+          { name: 'Rütbe 7-10: Asgard Şampiyonu', value: 'Öncelikli konuşmacı, VIP destek ve özel çekiliş hakları.', inline: false }
+        ];
+        renderEmbedFields();
+        updateEmbedPreview();
+      } else if (tpl === 'event') {
+        setEmbedColor('#fd79a8');
+        document.getElementById('embedOuterContent').value = '🎉 @everyone Büyük Çekiliş Başladı!';
+        document.getElementById('embedAuthorName').value = '🎁 Asgard Özel Etkinlik';
+        document.getElementById('embedTitle').value = '✨ BÜYÜK VALHALLA ÇEKİLİŞİ';
+        document.getElementById('embedDescription').value = 'Asgard sakinlerine özel harika ödüller sizleri bekliyor! Katılmak için aşağıdaki şartları tamamlayın.';
+        document.getElementById('embedFooterText').value = 'Son Katılım: Pazar 23:59';
+        embedFields = [
+          { name: '🎁 Ödül', value: '1 Aylık Discord Nitro / Özel Rol', inline: true },
+          { name: '📜 Katılım Şartı', value: 'Sunucuda en az Rütbe 2 (Karl) olmak.', inline: true }
+        ];
+        renderEmbedFields();
+        updateEmbedPreview();
+      }
+    }
+
+    // Run on load
+    window.addEventListener('DOMContentLoaded', () => {
+      init();
+      applyEmbedTemplate('announcement');
+    });
+  </script>
+</body>
+</html>
+
