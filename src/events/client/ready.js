@@ -5,6 +5,7 @@ const { logMemoryUsage } = require('../../utils/memoryManager');
 const UserProfile = require('../../models/UserProfile');
 const GuildSettings = require('../../models/GuildSettings');
 const { RankManager } = require('../../utils/rankManager');
+const { LeaderboardManager } = require('../../utils/leaderboardManager');
 
 module.exports = {
   name: 'clientReady',
@@ -27,6 +28,14 @@ module.exports = {
 
     // Register Slash Commands
     await registerSlashCommands(client);
+
+    // İlk açılışta kayıtlı tüm sunucuların sıralama tablolarını güncelle
+    for (const guild of client.guilds.cache.values()) {
+      const settings = await GuildSettings.findOne({ guildId: guild.id }).catch(() => null);
+      if (settings && settings.leaderboardChannelId) {
+        await LeaderboardManager.updateGuildLeaderboard(guild, settings);
+      }
+    }
 
     // Initial memory log
     logMemoryUsage();
@@ -104,6 +113,11 @@ module.exports = {
                 await profile.save();
               }
             }
+          }
+
+          // Her 5 dakikada bir Canlı Sıralama Tablosunu otomatik güncelle!
+          if (settings.leaderboardChannelId) {
+            await LeaderboardManager.updateGuildLeaderboard(guild, settings);
           }
         }
       } catch (err) {

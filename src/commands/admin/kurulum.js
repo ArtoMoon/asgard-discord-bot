@@ -280,6 +280,19 @@ module.exports = {
       }
       settings.levelLogChannelId = levelLogChannel.id;
 
+      // Canlı Sıralama Tablosu Kanalı (5 dakikada bir güncellenen tablo)
+      let leaderboardChannel = findExistingChannel(settings.leaderboardChannelId, '🏆・sıralama', 'sıralama', ChannelType.GuildText)
+        || findExistingChannel(null, 'siralama', 'siralama', ChannelType.GuildText);
+      if (!leaderboardChannel) {
+        leaderboardChannel = await guild.channels.create({
+          name: '🏆・sıralama',
+          type: ChannelType.GuildText,
+          parent: adminCategory.id
+        });
+        createdChannels.push(`🏆 ${leaderboardChannel.name}`);
+      }
+      settings.leaderboardChannelId = leaderboardChannel.id;
+
       // B) Ses Odaları Kategorisi & Join-to-Create
       let voiceCategory = findExistingChannel(settings.tempVoiceCategoryId, '🔊 ASGARD SES ODALARI', 'ses odaları', ChannelType.GuildCategory)
         || findExistingChannel(null, '🔊 ASGARD SES ODALARI', 'asgard ses', ChannelType.GuildCategory);
@@ -311,6 +324,10 @@ module.exports = {
 
       await settings.save();
 
+      // Canlı Sıralama Tablosunu hemen oluştur veya güncelle
+      const { LeaderboardManager } = require('../../utils/leaderboardManager');
+      await LeaderboardManager.updateGuildLeaderboard(guild, settings);
+
       const resultEmbed = new EmbedBuilder()
         .setColor(config.colors.success)
         .setTitle('✅ ASGARD OTOMATİK KURULUM TAMAMLANDI!')
@@ -338,6 +355,8 @@ module.exports = {
               `• **Developer Onay Log:** <#${settings.approvalChannelId}>\n` +
               `• **Mod Log:** <#${settings.modLogChannelId}>\n` +
               `• **Rütbe Log:** <#${settings.rankLogChannelId}>\n` +
+              `• **Seviye Log:** <#${settings.levelLogChannelId}>\n` +
+              `• **Canlı Sıralama Tablosu:** <#${settings.leaderboardChannelId}>\n` +
               `• **Özel Oda Oluşturucu:** <#${settings.joinToCreateChannelId}>`
           }
         )

@@ -235,6 +235,14 @@ module.exports = {
 
         return interaction.reply({ embeds: [promoteEmbed], ephemeral: true });
       }
+
+      // 4. Handle Live Leaderboard Table Buttons
+      if (customId.startsWith('leaderboard_view_') || customId === 'leaderboard_refresh') {
+        const { LeaderboardManager } = require('../../utils/leaderboardManager');
+        const mode = customId === 'leaderboard_refresh' ? 'ALL' : customId.replace('leaderboard_view_', '');
+        const payload = await LeaderboardManager.buildLeaderboardPayload(interaction.guild, mode);
+        return interaction.update(payload).catch(() => null);
+      }
     }
   }
 };

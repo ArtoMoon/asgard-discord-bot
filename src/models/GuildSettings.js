@@ -33,6 +33,8 @@ const GuildSettingsSchema = new mongoose.Schema({
   approvalChannelId: { type: String, default: null }, // Developer approval channel
   rankLogChannelId: { type: String, default: null },
   levelLogChannelId: { type: String, default: null }, // Dedicated Level Log Channel
+  leaderboardChannelId: { type: String, default: null }, // 5 dakikada bir güncellenen sıralama tablosu kanalı
+  leaderboardMessageId: { type: String, default: null }, // Güncellenen sıralama mesajı ID'si
 
   // Join to create voice system
   joinToCreateChannelId: { type: String, default: null },
