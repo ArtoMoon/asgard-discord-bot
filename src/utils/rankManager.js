@@ -1,13 +1,21 @@
 /**
- * Seviye 1-50 Sistemi ve Her 10 Seviyede Rol Güncellemesi (10, 20, 30, 40, 50 MAX)
+ * Seviye 1-50 Sistemi ve Seviye Rolleri (5, 10, 20, 30, 40, 50 MAX)
  */
 const LEVEL_MILESTONES = [
+  {
+    level: 5,
+    name: 'Seviye 5',
+    roleName: 'Seviye 5 [Başlangıç / Emoji]',
+    color: '#1abc9c',
+    requiredXp: 2400,
+    perk: 'Harici Emoji & Tepki Kullanabilme'
+  },
   {
     level: 10,
     name: 'Seviye 10',
     roleName: 'Seviye 10 [GIF/Sticker]',
     color: '#3498db',
-    requiredXp: 4050,
+    requiredXp: 12150,
     perk: 'GIF & Harici Sticker Kullanabilme'
   },
   {
@@ -15,7 +23,7 @@ const LEVEL_MILESTONES = [
     name: 'Seviye 20',
     roleName: 'Seviye 20 [Görsel]',
     color: '#2ecc71',
-    requiredXp: 18050,
+    requiredXp: 54150,
     perk: 'Görsel & Resim Paylaşma Yetkisi'
   },
   {
@@ -23,7 +31,7 @@ const LEVEL_MILESTONES = [
     name: 'Seviye 30',
     roleName: 'Seviye 30 [Link]',
     color: '#9b59b6',
-    requiredXp: 42050,
+    requiredXp: 126150,
     perk: 'Bağlantı (Link) Paylaşma Yetkisi'
   },
   {
@@ -31,7 +39,7 @@ const LEVEL_MILESTONES = [
     name: 'Seviye 40',
     roleName: 'Seviye 40 [Yayın]',
     color: '#e67e22',
-    requiredXp: 76050,
+    requiredXp: 228150,
     perk: '1080p/60FPS Canlı Yayın Açma & Ses Yetkisi'
   },
   {
@@ -39,7 +47,7 @@ const LEVEL_MILESTONES = [
     name: 'Seviye 50 [MAX]',
     roleName: 'Seviye 50 [Şampiyon / VIP]',
     color: '#f1c40f',
-    requiredXp: 120050,
+    requiredXp: 360150,
     perk: 'Asgard Şampiyonu, Öncelikli Konuşmacı & VIP Ayrıcalıklar'
   }
 ];
@@ -184,13 +192,14 @@ class RankManager {
 
   static calculateLevel(totalXp) {
     if (!totalXp || totalXp <= 0) return 1;
-    const level = Math.floor(Math.sqrt(totalXp / 50)) + 1;
+    // Seviye 2 = 150 XP, Seviye 5 = 2400 XP, Seviye 10 = 12150 XP
+    const level = Math.floor(Math.sqrt(totalXp / 150)) + 1;
     return Math.max(1, Math.min(50, level));
   }
 
   static xpForLevel(level) {
     if (level <= 1) return 0;
-    return Math.pow(level - 1, 2) * 50;
+    return Math.pow(level - 1, 2) * 150;
   }
 
   static getMilestoneForLevel(level) {
@@ -203,6 +212,79 @@ class RankManager {
       if (level >= m.level) highest = m;
     }
     return highest;
+  }
+
+  /**
+   * Üye Seviye 5, 10, 20, 30, 40 veya 50'ye ulaştığında ilgili Seviye Rolünü verir
+   */
+  static async syncMemberLevelRole(guild, member, newLevel, settings) {
+    const milestone = this.getHighestMilestoneReached(newLevel);
+    if (!milestone || !guild || !member) {
+      return { milestone: null, roleUpdated: false, assignedRoleId: null };
+    }
+
+    const levelRoles = settings?.levelRoles || [];
+    let roleCfg = levelRoles.find(r => r.level === milestone.level && r.roleId);
+
+    // Eğer Seviye 5 için henüz özel ID girilmemişse ilk tanımlı seviye rolüne veya sunucudaki isme bak
+    if (!roleCfg && milestone.level === 5) {
+      roleCfg = levelRoles.find(r => r.level === 10 && r.roleId);
+    }
+
+    let roleToGive = roleCfg?.roleId ? guild.roles.cache.get(roleCfg.roleId) : null;
+
+    // Sunucuda isimle ara (Örn: "Seviye 5 [Başlangıç / Emoji]" veya "Seviye 5")
+    if (!roleToGive) {
+      roleToGive = guild.roles.cache.find(r =>
+        r.name.toLowerCase() === milestone.roleName.toLowerCase() ||
+        r.name.toLowerCase() === milestone.name.toLowerCase() ||
+        r.name.toLowerCase().startsWith(`seviye ${milestone.level}`)
+      );
+    }
+
+    // Eğer sunucuda hiç yoksa otomatik oluştur ve ayarlara kaydet!
+    if (!roleToGive) {
+      try {
+        roleToGive = await guild.roles.create({
+          name: milestone.roleName,
+          color: milestone.color,
+          hoist: true,
+          mentionable: false,
+          reason: `Asgard Seviye ${milestone.level} Rolü Otomatik Oluşturuldu`
+        });
+        if (settings) {
+          const existingIdx = settings.levelRoles.findIndex(r => r.level === milestone.level);
+          if (existingIdx >= 0) {
+            settings.levelRoles[existingIdx].roleId = roleToGive.id;
+          } else {
+            settings.levelRoles.push({
+              level: milestone.level,
+              roleId: roleToGive.id,
+              name: milestone.name,
+              perk: milestone.perk,
+              color: milestone.color
+            });
+          }
+          await settings.save().catch(() => null);
+        }
+      } catch (err) {
+        // Botun rol oluşturma yetkisi yoksa geç
+      }
+    }
+
+    if (roleToGive) {
+      const alreadyHas = member.roles.cache.has(roleToGive.id);
+      if (!alreadyHas) {
+        await member.roles.add(roleToGive, `Seviye ${newLevel} (${milestone.name}) ödülü`).catch(() => null);
+      }
+      return {
+        milestone,
+        roleUpdated: !alreadyHas,
+        assignedRoleId: roleToGive.id
+      };
+    }
+
+    return { milestone, roleUpdated: false, assignedRoleId: null };
   }
 
   static getRanks() {

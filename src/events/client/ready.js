@@ -46,9 +46,8 @@ module.exports = {
           for (const [memberId, member] of guild.members.cache.entries()) {
             if (member.user.bot) continue;
             const vs = member.voice;
-            // Member must be in a non-AFK voice channel and not deafened
-            if (vs && vs.channelId && !vs.deaf && !vs.selfDeaf && vs.channelId !== guild.afkChannelId) {
-              // Ensure there's more than 1 non-bot member in channel to prevent solo AFK farming
+            // Member must be in a non-AFK voice channel and not deafened or muted
+            if (vs && vs.channelId && !vs.deaf && !vs.selfDeaf && !vs.selfMute && !vs.serverMute && vs.channelId !== guild.afkChannelId) {
               const activeMembers = vs.channel.members.filter(m => !m.user.bot && !m.voice.deaf && !m.voice.selfDeaf);
               if (activeMembers.size >= 1) {
                 let profile = await UserProfile.findOne({ guildId: guild.id, userId: memberId });
@@ -56,12 +55,12 @@ module.exports = {
                   profile = new UserProfile({ guildId: guild.id, userId: memberId });
                 }
 
-                const oldLevel = profile.level || RankManager.calculateLevel(profile.totalXp);
-                // Add 5 minutes and 25 Voice XP
+                const oldLevel = RankManager.calculateLevel(profile.totalXp);
+                // Her 5 dakikada 10 Ses XP (Dakikada 2 XP - Çok kolay kasılmaması için dengelendi)
                 profile.voiceMinutes += 5;
-                profile.totalXp += 25;
+                profile.totalXp += 10;
                 profile.weekly.voiceMinutes += 5;
-                profile.weekly.xp += 25;
+                profile.weekly.xp += 10;
 
                 const newLevel = RankManager.calculateLevel(profile.totalXp);
                 profile.level = newLevel;
@@ -71,32 +70,31 @@ module.exports = {
                   await RankManager.addStaffAction(guild, member, profile, settings, 'VOICE');
                 }
 
-                // Check milestone rank up
-                if (newLevel > oldLevel) {
-                  const oldMilestone = RankManager.getHighestMilestoneReached(oldLevel);
-                  const newMilestone = RankManager.getHighestMilestoneReached(newLevel);
+                // Seviye 5, 10, 20, 30, 40, 50 rol senkronizasyonu (5 olunca veya üstündeyse rolünü kesin verir!)
+                const roleSync = await RankManager.syncMemberLevelRole(guild, member, newLevel, settings);
 
-                  if (newMilestone && (!oldMilestone || newMilestone.level > oldMilestone.level)) {
-                    profile.currentRank = newMilestone.level;
-                    const levelRoles = settings.levelRoles || [];
-                    const milestoneRoleConfig = levelRoles.find(r => r.level === newMilestone.level)
-                      || (settings.ranks && settings.ranks.find(r => r.rank === newMilestone.level / 5 || r.rank === newMilestone.level));
+                // Her level atladığında veya yeni rol verildiğinde seviye-log kanalına log at!
+                if (newLevel > oldLevel || roleSync.roleUpdated) {
+                  const awardedMilestone = roleSync.milestone;
+                  const nextMilestone = RankManager.getLevelMilestones().find(m => m.level > newLevel);
 
-                    if (milestoneRoleConfig && milestoneRoleConfig.roleId) {
-                      await member.roles.add(milestoneRoleConfig.roleId).catch(() => null);
-                    }
-                    Logger.info(`[Seviye Yükseldi] ${member.user.tag} yeni seviye hedefine ulaştı: Seviye ${newMilestone.level} (Ses XP ile)`);
-                  }
-
-                  const logChannelId = settings.levelLogChannelId || settings.rankLogChannelId;
+                  const logChannelId = settings.levelLogChannelId || settings.rankLogChannelId || settings.modLogChannelId;
                   if (logChannelId) {
                     const embed = {
-                      color: 0x5865F2,
-                      title: '🔊 SES AKTİFLİĞİ: SEVİYE YÜKSELDİ!',
-                      description: `Tebrikler ${member}! Ses kanallarında aktif kalarak seviye atladın!\n\n` +
+                      color: awardedMilestone ? parseInt(awardedMilestone.color.replace('#', ''), 16) : 0x5865F2,
+                      title: roleSync.roleUpdated
+                        ? `👑 [SES AKTİFLİĞİ - SEVİYE ${awardedMilestone.level}] YENİ ROL KAZANILDI!`
+                        : '🔊 SES AKTİFLİĞİ: SEVİYE YÜKSELDİ!',
+                      description:
+                        `Tebrikler ${member}! Ses kanallarında aktif kalarak yükseldin!\n\n` +
+                        `📊 **Eski Seviye:** Seviye ${oldLevel}\n` +
                         `⭐ **Yeni Seviye:** **Seviye ${newLevel}**\n` +
+                        (awardedMilestone ? `🎁 **Mevcut Seviye Yetkisi:** **${awardedMilestone.perk}**\n` : '') +
+                        (roleSync.assignedRoleId ? `🛡️ **Verilen Seviye Rolü:** <@&${roleSync.assignedRoleId}>\n` : '') +
+                        (nextMilestone ? `🎯 **Sonraki Rol Hedefi:** Seviye ${nextMilestone.level} (${nextMilestone.perk})\n\n` : '\n') +
                         `🎙️ **Toplam Ses Süresi:** ${profile.voiceMinutes} dakika\n` +
-                        `✨ **Toplam XP:** ${profile.totalXp} XP`,
+                        `💬 **Toplam Mesaj:** ${profile.messageCount} mesaj\n` +
+                        `✨ **Toplam XP:** ${profile.totalXp.toLocaleString()} XP`,
                       timestamp: new Date().toISOString()
                     };
                     await Logger.sendGuildLog(guild, logChannelId, embed).catch(() => null);

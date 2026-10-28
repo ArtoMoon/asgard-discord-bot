@@ -1251,6 +1251,7 @@
 
       // Default fallback definitions if empty
       const defaultMilestones = [
+        { level: 5, name: 'Seviye 5', perk: 'Harici Emoji & Tepki Kullanabilme', color: '#1abc9c' },
         { level: 10, name: 'Seviye 10', perk: 'GIF & Harici Sticker Kullanabilme', color: '#3498db' },
         { level: 20, name: 'Seviye 20', perk: 'Görsel & Resim Paylaşma Yetkisi', color: '#2ecc71' },
         { level: 30, name: 'Seviye 30', perk: 'Bağlantı (Link) Paylaşma Yetkisi', color: '#9b59b6' },
@@ -1492,8 +1493,8 @@
         ranks: []
       };
 
-      // Collect Milestone Level Roles (10, 20, 30, 40, 50 MAX)
-      [10, 20, 30, 40, 50].forEach(lvl => {
+      // Collect Milestone Level Roles (5, 10, 20, 30, 40, 50 MAX)
+      [5, 10, 20, 30, 40, 50].forEach(lvl => {
         const input = document.getElementById(`levelRoleInput_${lvl}`);
         const nameInput = document.getElementById(`levelRoleName_${lvl}`);
         const perkInput = document.getElementById(`levelRolePerk_${lvl}`);
