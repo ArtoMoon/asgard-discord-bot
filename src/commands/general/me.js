@@ -1,4 +1,11 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const {
+  SlashCommandBuilder,
+  EmbedBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  PermissionFlagsBits
+} = require('discord.js');
 const UserProfile = require('../../models/UserProfile');
 const GuildSettings = require('../../models/GuildSettings');
 const { RankManager } = require('../../utils/rankManager');
@@ -113,6 +120,30 @@ module.exports = {
       iconURL: guild.iconURL()
     }).setTimestamp();
 
-    await reply({ embeds: [embed] });
+    // Yetkili Kontrolü:
+    const staffRoleIds = settings?.staffRoleIds || [];
+    const asgardRoleIds = (settings?.ranks || []).map(r => r.roleId).filter(Boolean);
+    const allStaffRoleIds = [...staffRoleIds, ...asgardRoleIds];
+
+    const isStaffMember = targetMember.id === guild.ownerId ||
+      (config.developerIds || []).includes(targetMember.id) ||
+      (settings?.developerUserIds || []).includes(targetMember.id) ||
+      targetMember.permissions.has(PermissionFlagsBits.ManageGuild) ||
+      targetMember.permissions.has(PermissionFlagsBits.Administrator) ||
+      targetMember.roles.cache.some(r => allStaffRoleIds.includes(r.id));
+
+    const components = [];
+    if (isStaffMember) {
+      const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId(`staff_promote_info_${targetMember.id}`)
+          .setLabel('🛡️ Yetkili Terfi & Yükselme Durumu')
+          .setStyle(ButtonStyle.Success)
+          .setEmoji('📈')
+      );
+      components.push(row);
+    }
+
+    await reply({ embeds: [embed], components });
   }
 };

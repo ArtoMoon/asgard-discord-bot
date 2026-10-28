@@ -131,6 +131,101 @@ module.exports = {
           await interaction.update({ embeds: [rejectedEmbed], components: [] });
           Logger.warn(`[Yetki Reddedildi] ${interaction.user.tag}, talep ID: ${requestId} talebini reddetti.`);
         }
+        return;
+      }
+
+      // 3. Handle Staff Promotion Info Button (!me & /me)
+      if (customId.startsWith('staff_promote_info_')) {
+        const targetUserId = customId.replace('staff_promote_info_', '');
+
+        const targetMember = await interaction.guild.members.fetch(targetUserId).catch(() => null);
+        if (!targetMember) {
+          return interaction.reply({ content: '❌ Kullanıcı bilgisi sunucuda bulunamadı!', ephemeral: true });
+        }
+
+        const UserProfile = require('../../models/UserProfile');
+        const { RankManager } = require('../../utils/rankManager');
+
+        let profile = await UserProfile.findOne({ guildId: interaction.guildId, userId: targetUserId });
+        if (!profile) {
+          profile = new UserProfile({ guildId: interaction.guildId, userId: targetUserId });
+        }
+
+        const currentRank = RankManager.getRankByLevel(profile.currentRank);
+        const progress = RankManager.getNextRankProgress(profile.currentRank, profile.weekly);
+        const progressBar = RankManager.createProgressBar(progress.progressPercent, 14);
+
+        const promoteEmbed = new EmbedBuilder()
+          .setColor(0x9b59b6)
+          .setTitle(`🛡️ Yetkili Terfi & Yükselme Raporu: ${targetMember.displayName}`)
+          .setThumbnail(targetMember.user.displayAvatarURL({ dynamic: true }))
+          .setDescription(
+            `Asgard Yönetim Kadrosu haftalık performans ve terfi durumu aşağıda belirtilmiştir.\n` +
+            `Yetkili kademeleri haftalık aktifliğe (sohbet, ses, XP) ve yönetim kurulu değerlendirmesine göre yükseltilir.`
+          )
+          .addFields(
+            {
+              name: '👑 Mevcut Yönetim Kademesi',
+              value: `**${currentRank.name}** *(Kademe ${currentRank.rank} / 10)*\n` +
+                `**Mevcut Yetkiler:** ${currentRank.perks.join(' • ')}`,
+              inline: false
+            },
+            {
+              name: '📊 Bu Haftaki Yönetim Performansı',
+              value: `💬 **Mesaj:** \`${profile.weekly.messages}\` adet\n` +
+                `🎙️ **Ses:** \`${profile.weekly.voiceMinutes}\` dakika\n` +
+                `⚡ **Haftalık XP:** \`${profile.weekly.xp.toLocaleString()}\` XP`,
+              inline: true
+            },
+            {
+              name: '📈 Terfi İlerleme Oranı',
+              value: `${progressBar}\n**Başarı:** %${progress.progressPercent}`,
+              inline: true
+            }
+          );
+
+        if (progress.isMax || !progress.nextRank) {
+          promoteEmbed.addFields({
+            name: '🏆 Zirve Kademesi (Odin\'s Champion)',
+            value: `En yüksek yönetim kademesindesiniz! Sunucunun en kıdemli baş yöneticisi olarak Asgard'ı yönetmeye devam edin.`,
+            inline: false
+          });
+        } else {
+          const isReady = progress.progressPercent >= 100;
+          promoteEmbed.addFields(
+            {
+              name: `🎯 Sıradaki Yönetim Kademesi: ${progress.nextRank.name}`,
+              value: `Yükseldiğinizde kazanacağınız yeni yetkiler:\n` +
+                progress.nextRank.perks.map(p => `✨ ${p}`).join('\n'),
+              inline: false
+            },
+            {
+              name: isReady ? '🎉 Terfi Durumu: HAZIR!' : '⏳ Terfi İçin Kalan Eksikler',
+              value: isReady
+                ? `✅ **Tebrikler!** Bu haftaki tüm terfi şartlarını tamamladınız.\n` +
+                  `Haftalık değerlendirmede veya üst yöneticiniz \`/yetki-ver\` onayı verdiğinde terfiniz gerçekleşir!`
+                : `Bir sonraki kademeye terfi edebilmek için:\n` +
+                  `• **${progress.neededMessages}** mesaj daha yazmalısınız.\n` +
+                  `• **${progress.neededVoiceMinutes}** dakika daha ses odalarında aktif olmalısınız.\n` +
+                  `• **${progress.neededXp.toLocaleString()}** XP daha kazanmalısınız.`,
+              inline: false
+            }
+          );
+        }
+
+        promoteEmbed.addFields({
+          name: '📅 Terfi & Değerlendirme Zamanı',
+          value: `• **Haftalık Değerlendirme:** Her **Pazar gecesi 23:59'da** yetkili kadrosunun aktifliği kontrol edilir ve uygun yetkililer terfi ettirilir.\n` +
+            `• **Erken Terfi:** Hedeflerini erkenden bitiren yetkililer, üst yönetimden \`/yetki-ver\` talebi isteyerek erken terfi alabilir.`,
+          inline: false
+        });
+
+        promoteEmbed.setFooter({
+          text: 'Asgard Yönetim Kurulu • Performans & Terfi Takip Sistemi',
+          iconURL: interaction.guild.iconURL()
+        }).setTimestamp();
+
+        return interaction.reply({ embeds: [promoteEmbed], ephemeral: true });
       }
     }
   }
