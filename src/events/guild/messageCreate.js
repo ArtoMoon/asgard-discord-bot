@@ -79,6 +79,11 @@ module.exports = {
         const newLevel = RankManager.calculateLevel(profile.totalXp);
         profile.level = newLevel;
 
+        // Eğer kullanıcı yetkili kadrosundaysa sohbet denetimi için +3 Yetkili Puanı ekle ve terfi kontrolü yap
+        if (RankManager.isMemberStaff(message.member, settings, profile)) {
+          await RankManager.addStaffAction(message.guild, message.member, profile, settings, 'MESSAGE');
+        }
+
         // Level Up Trigger
         if (newLevel > oldLevel) {
           const oldMilestone = RankManager.getHighestMilestoneReached(oldLevel);

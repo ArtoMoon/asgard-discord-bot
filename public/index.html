@@ -1323,16 +1323,16 @@
       if (!container) return;
 
       const defaultAsgardRanks = [
-        { rank: 1, name: 'Thrall (Stajyer Yetkili)', color: '#95a5a6', requiredWeeklyXp: 0, perks: ['Yeni Üye Kayıt Yetkisi (!kayit)', 'Rehberlik'] },
-        { rank: 2, name: 'Karl (Asistan Yetkili)', color: '#3498db', requiredWeeklyXp: 500, perks: ['Sohbet Düzeni & Uyarı', 'Yetkili Sohbetine Erişim'] },
-        { rank: 3, name: 'Berserker (Deneme Moderatör)', color: '#e67e22', requiredWeeklyXp: 1200, perks: ['Kullanıcı Susturma (!timeout)', 'Mesaj Temizleme'] },
-        { rank: 4, name: 'Hersir (Sohbet Moderatörü)', color: '#2ecc71', requiredWeeklyXp: 2200, perks: ['Cezalıya Atma (!jail)', 'Metin Kanalları Moderasyonu'] },
-        { rank: 5, name: 'Thegn (Ses Moderatörü)', color: '#1abc9c', requiredWeeklyXp: 3500, perks: ['Ses Odalarında Taşıma & Susturma', 'Oda Yönetimi'] },
-        { rank: 6, name: 'Jarl (Kıdemli Moderatör)', color: '#9b59b6', requiredWeeklyXp: 5000, perks: ['Üye Atma (Kick Yetkisi)', 'Yetki Talep Açma (/yetki-ver)'] },
-        { rank: 7, name: 'Einherjar (Şef Moderatör)', color: '#e74c3c', requiredWeeklyXp: 7000, perks: ['Moderatör Ekibi Denetimi', 'Audit Log Takibi'] },
-        { rank: 8, name: 'Valkyrie (Asistan Yönetici)', color: '#fd79a8', requiredWeeklyXp: 9500, perks: ['Yasaklama (Ban Yetkisi)', 'Kanal Düzeni & İzin Kontrolü'] },
-        { rank: 9, name: 'Aesir (Konsey Yöneticisi)', color: '#f39c12', requiredWeeklyXp: 13000, perks: ['Tüm Moderasyon Komutları', 'Etkinlik & Ceza İptalleri'] },
-        { rank: 10, name: 'Odin\'s Champion (Baş Yönetici)', color: '#f1c40f', requiredWeeklyXp: 18000, perks: ['Tam Sunucu Yönetimi', 'Güvenli Liste', 'Developer Onay Yetkisi'] }
+        { rank: 1, name: 'Thrall (Stajyer Yetkili)', color: '#95a5a6', requiredPoints: 0, perks: ['Yeni Üye Kayıt Yetkisi (!kayit)', 'Rehberlik'] },
+        { rank: 2, name: 'Karl (Asistan Yetkili)', color: '#3498db', requiredPoints: 100, perks: ['Sohbet Düzeni & Uyarı', 'Yetkili Sohbetine Erişim'] },
+        { rank: 3, name: 'Berserker (Deneme Moderatör)', color: '#e67e22', requiredPoints: 250, perks: ['Kullanıcı Susturma (!timeout)', 'Mesaj Temizleme'] },
+        { rank: 4, name: 'Hersir (Sohbet Moderatörü)', color: '#2ecc71', requiredPoints: 500, perks: ['Cezalıya Atma (!jail)', 'Metin Kanalları Moderasyonu'] },
+        { rank: 5, name: 'Thegn (Ses Moderatörü)', color: '#1abc9c', requiredPoints: 850, perks: ['Ses Odalarında Taşıma & Susturma', 'Oda Yönetimi'] },
+        { rank: 6, name: 'Jarl (Kıdemli Moderatör)', color: '#9b59b6', requiredPoints: 1300, perks: ['Üye Atma (Kick Yetkisi)', 'Yetki Talep Açma (/yetki-ver)'] },
+        { rank: 7, name: 'Einherjar (Şef Moderatör)', color: '#e74c3c', requiredPoints: 1900, perks: ['Moderatör Ekibi Denetimi', 'Audit Log Takibi'] },
+        { rank: 8, name: 'Valkyrie (Asistan Yönetici)', color: '#fd79a8', requiredPoints: 2700, perks: ['Yasaklama (Ban Yetkisi)', 'Kanal Düzeni & İzin Kontrolü'] },
+        { rank: 9, name: 'Aesir (Konsey Yöneticisi)', color: '#f39c12', requiredPoints: 3800, perks: ['Tüm Moderasyon Komutları', 'Etkinlik & Ceza İptalleri'] },
+        { rank: 10, name: 'Odin\'s Champion (Baş Yönetici)', color: '#f1c40f', requiredPoints: 5500, perks: ['Tam Sunucu Yönetimi', 'Güvenli Liste', 'Developer Onay Yetkisi'] }
       ];
 
       const listToRender = (Array.isArray(ranks) && ranks.length > 0) ? ranks : defaultAsgardRanks;
@@ -1344,7 +1344,8 @@
         const perks = Array.isArray(r.perks) ? r.perks.join(' • ') : (r.perk || 'Temel Asgard Ayrıcalıkları');
         const color = r.color || '#9b59b6';
         const roleId = r.roleId || '';
-        const xpReq = r.requiredWeeklyXp ? `${r.requiredWeeklyXp.toLocaleString()} XP/hf` : 'Başlangıç';
+        const pts = r.requiredPoints ?? r.requiredWeeklyXp ?? 0;
+        const xpReq = pts > 0 ? `⭐ ${pts.toLocaleString()} Yetkili Puanı` : 'Başlangıç Kademesi';
 
         let roleOptionsHtml = '<option value="">Rol Seçin veya elle ID girin...</option>';
         currentRoles.forEach(role => {

@@ -38,20 +38,21 @@ module.exports = {
             `• **\`/timeout\`** veya **\`${prefix}timeout\`** \`<üye> <süre> [sebep]\` → Kullanıcıya zamanaşımı (susturma) uygular.`
         },
         {
-          name: '👑 Yönetici & Kurulum Komutları',
+          name: '👑 Yönetici & Yetkili Kariyer Komutları',
           value:
-            `• **\`/kurulum\`** veya **\`${prefix}kurulum\`** → **Otomatik Kurulum!** 10 Asgard rütbesini, odaları, cezalı ve kayıt rollerini saniyeler içinde otomatik açar ve veri tabanına kaydeder.\n` +
-            `• **\`/settings\`** veya **\`${prefix}settings\`** → Bot ayarlarını (oto-rol, kanallar, developer listesi) yapılandırır veya görüntüler.\n` +
-            `• **\`/yetki-ver\`** veya **\`${prefix}yetki-ver\`** \`<üye> <rol>\` → Yetkilinin birine rol vermesini sağlar; rol **sadece Developer onay verirse** teslim edilir!`
+            `• **\`/yetkili-puan baslat\`** veya **\`${prefix}ypuan baslat <üye>\`** → Üyeyi 1. Kademe Stajyer Yetkili (Thrall) olarak kadroya başlatır.\n` +
+            `• **\`/yetkili-puan ekle/cikar\`** veya **\`${prefix}ypuan ekle <yetkili> <puan>\`** → Yetkiliye ödül/ceza puanı verir.\n` +
+            `• **\`/yetkili-puan terfi\`** veya **\`${prefix}ypuan terfi <yetkili>\`** → Yetkiliyi doğrudan 1 üst Asgard Kademesine terfi ettirir.\n` +
+            `• **\`/kurulum\`** veya **\`${prefix}kurulum\`** → 10 Asgard rütbesini, odaları ve kayıt rollerini otomatik açar.\n` +
+            `• **\`/yetki-ver\`** veya **\`${prefix}yetki-ver\`** \`<üye> <rol>\` → Developer onaylı rol verme talebi açar.`
         },
         {
-          name: '💎 Özel Sunucu Sistemleri',
+          name: '💎 Özel Sunucu Sistemleri (Level vs Yetkili Terfi)',
           value:
-            `• **10 Asgard Yönetim Kademesi:** Stajyer'den Baş Yöneticiye kadar sunucu moderasyon ve yönetim hiyerarşisi.\n` +
-            `• **1-50 Seviye Rolleri (Her 10 Seviyede Bir):** Üyeler XP kazanarak Seviye 10 (GIF/Sticker), 20 (Görsel), 30 (Link), 40 (Yayın), 50 (VIP) izinleri kazanır.\n` +
-            `• **Görünmezlik Koruması:** Yetkililer 'Görünmez / Çevrimdışı' moda geçerse yetki rolleri güvenlik gereği askıya alınır, çevrimiçi olunca geri verilir!\n` +
-            `• **Ses Odası Oluşturucu:** \`➕ Ses Odası Oluştur\` kanalına girdiğiniz an size özel geçici oda açılır, herkes çıktığında oda otomatik silinir.\n` +
-            `• **Rol Guard & Developer Onayı:** Güvenli liste dışındaki kimse Discord'dan el ile rol veremez; bot engeller ve log kanalına alarm düşer.`
+            `• **🛡️ Yetkili İcraat & Terfi Sistemi (10 Asgard Kademesi):** Levelden tamamen bağımsızdır! Yetkililer kayıt yaptıkça (**+15p**), ceza işlemi uyguladıkça (**+20p**) ve ses mesaisi yaptıkça (**+10p**) otomatik kademe atlar.\n` +
+            `• **⭐ 1-50 Üye Seviye Sistemi:** Normal üyeler XP kazanarak Seviye 10 (GIF), 20 (Görsel), 30 (Link), 40 (Yayın), 50 (VIP) izinlerini açar.\n` +
+            `• **👻 Görünmezlik Koruması:** Yetkililer 'Görünmez / Çevrimdışı' moda geçerse yetki rolleri güvenlik gereği askıya alınır, çevrimiçi olunca geri verilir!\n` +
+            `• **🔒 Rol Guard:** Güvenli liste dışındaki kimse Discord'dan el ile rol veremez; bot anında geri alır.`
         }
       )
       .setFooter({ text: 'Asgard Krallığı Güç & Düzen Sistemi', iconURL: client.user.displayAvatarURL() })

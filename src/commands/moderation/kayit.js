@@ -25,13 +25,20 @@ module.exports = {
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageNicknames),
 
   async execute({ client, message, interaction, isSlash, guild, member, user, channel, args, reply }) {
-    // Check permission: ManageNicknames or ManageRoles or Administrator
-    const hasPerm = member.permissions.has(PermissionFlagsBits.ManageNicknames) ||
+    const settings = await GuildSettings.findOne({ guildId: guild.id });
+    if (!settings) {
+      return reply({ content: '❌ Sunucu ayarları bulunamadı! Lütfen önce `/kurulum` yapınız.', ephemeral: true });
+    }
+
+    // Check permission: ManageNicknames, ManageRoles, Administrator, or Asgard Staff Role
+    const isStaff = RankManager.isMemberStaff(member, settings, null);
+    const hasPerm = isStaff ||
+      member.permissions.has(PermissionFlagsBits.ManageNicknames) ||
       member.permissions.has(PermissionFlagsBits.ManageRoles) ||
       member.permissions.has(PermissionFlagsBits.Administrator);
 
     if (!hasPerm) {
-      return reply({ content: '❌ Bu komutu kullanabilmek için **Kayıt Yetkilisi** veya **Yönetici** olmalısınız!', ephemeral: true });
+      return reply({ content: '❌ Bu komutu kullanabilmek için **Yetkili Kadrosunda** veya **Yönetici** olmalısınız!', ephemeral: true });
     }
 
     let targetMember = null;
@@ -59,11 +66,6 @@ module.exports = {
       return reply({ content: '❌ Botlar kayıt edilemez!', ephemeral: true });
     }
 
-    const settings = await GuildSettings.findOne({ guildId: guild.id });
-    if (!settings) {
-      return reply({ content: '❌ Sunucu ayarları bulunamadı! Lütfen önce `/kurulum` yapınız.', ephemeral: true });
-    }
-
     // Format nickname: [İsim] | Asgard
     const formattedNick = `${newName} | Asgard`;
 
@@ -79,7 +81,7 @@ module.exports = {
         await targetMember.roles.remove(unverifiedId).catch(() => null);
       }
 
-      // 3. Add Registered Role
+      // 3. Add Registered Member Role (Normal Üye Rolü)
       if (settings.registeredRoleId) {
         const regRole = guild.roles.cache.get(settings.registeredRoleId);
         if (regRole) {
@@ -87,29 +89,26 @@ module.exports = {
         }
       }
 
-      // 4. Add Rank 1 (Thrall) Role
-      const rank1Config = settings.ranks.find(r => r.rank === 1);
-      if (rank1Config && rank1Config.roleId) {
-        const r1Role = guild.roles.cache.get(rank1Config.roleId);
-        if (r1Role) {
-          await targetMember.roles.add(r1Role).catch(() => null);
-        }
-      }
-
-      // 5. Initialize or update user profile
+      // 4. Initialize or update target user profile
       let profile = await UserProfile.findOne({ guildId: guild.id, userId: targetMember.id });
       if (!profile) {
         profile = new UserProfile({
           guildId: guild.id,
           userId: targetMember.id,
-          currentRank: 1
+          level: 1
         });
-      } else {
-        profile.currentRank = 1;
       }
       await profile.save();
 
-      const rank1Info = RankManager.getRankByLevel(1);
+      // 5. Kayıt Yapan Yetkiliye +15 Yetkili Puanı ve +1 Kayıt İcraatı Ekle!
+      let staffProfile = await UserProfile.findOne({ guildId: guild.id, userId: member.id });
+      if (!staffProfile) {
+        staffProfile = new UserProfile({ guildId: guild.id, userId: member.id });
+      }
+      if (!staffProfile.staff) staffProfile.staff = { isStaff: true, rank: 1, points: 0, registrations: 0, punishments: 0, voiceMinutes: 0, messages: 0, bonusPoints: 0 };
+      staffProfile.staff.isStaff = true;
+
+      const staffResult = await RankManager.addStaffAction(guild, member, staffProfile, settings, 'REGISTER');
 
       const successEmbed = new EmbedBuilder()
         .setColor(config.colors.success)
@@ -117,12 +116,12 @@ module.exports = {
         .setDescription(
           `**${targetMember}** kullanıcısının kaydı **${member}** tarafından başarıyla tamamlandı!\n\n` +
           `📝 **Yeni İsim:** \`${formattedNick}\`\n` +
-          `🛡️ **Başlangıç Rütbesi:** **${rank1Info.name}**\n` +
-          `🎁 **Başlangıç Hakları:** ${rank1Info.perks.join(', ')}\n\n` +
-          `*Sohbet ederek ve ses kanallarında vakit geçirerek daha üst rütbelere ve ayrıcalıklara erişebilirsin!*`
+          `⭐ **Başlangıç Seviyesi:** **Seviye 1** *(Sohbet & seste XP kasarak 10, 20, 30, 40, 50 seviyelerinde GIF, Görsel, Link ve Yayın açılır)*\n\n` +
+          `🛡️ **Yetkili İcraat Ödülü:** ${member} bu kayıt ile **+15 Yetkili Puanı** kazandı! *(Toplam Kayıt: ${staffProfile.staff.registrations} • Puan: ${staffProfile.staff.points})*` +
+          (staffResult.promoted ? `\n🎉 **TERFİ MÜJDESİ:** ${member} yeni yönetim kademesine yükseldi: **${staffResult.newRank.name}**!` : '')
         )
         .setThumbnail(targetMember.user.displayAvatarURL({ dynamic: true }))
-        .setFooter({ text: 'Asgard Krallığı Kayıt Bürosu', iconURL: guild.iconURL() })
+        .setFooter({ text: 'Asgard Krallığı Kayıt & Yetkili Terfi Sistemi', iconURL: guild.iconURL() })
         .setTimestamp();
 
       await reply({ embeds: [successEmbed] });

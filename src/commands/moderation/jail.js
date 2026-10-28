@@ -3,6 +3,7 @@ const GuildSettings = require('../../models/GuildSettings');
 const UserProfile = require('../../models/UserProfile');
 const Logger = require('../../utils/logger');
 const config = require('../../config');
+const { RankManager } = require('../../utils/rankManager');
 
 module.exports = {
   name: 'jail',
@@ -146,14 +147,25 @@ module.exports = {
       Logger.error('Kullanıcı cezalıya atılırken hata:', err.message);
     });
 
+    // Yetkiliye +20 Yetkili Puanı ve +1 Moderasyon İcraatı ekle
+    let staffProfile = await UserProfile.findOne({ guildId: guild.id, userId: member.id });
+    if (!staffProfile) {
+      staffProfile = new UserProfile({ guildId: guild.id, userId: member.id });
+    }
+    if (!staffProfile.staff) staffProfile.staff = { isStaff: true, rank: 1, points: 0, registrations: 0, punishments: 0, voiceMinutes: 0, messages: 0, bonusPoints: 0 };
+    staffProfile.staff.isStaff = true;
+    const staffResult = await RankManager.addStaffAction(guild, member, staffProfile, settings, 'PUNISH');
+
     const jailEmbed = new EmbedBuilder()
       .setColor(config.colors.error)
       .setTitle('⛓️ [CEZALANDIRMA] Kullanıcı Cezalıya (Jail) Atıldı')
       .setDescription(
         `**Cezalandırılan Üye:** ${targetMember} (\`${targetMember.user.tag}\`)\n` +
         `**Yetkili:** ${member} (\`${member.user.tag}\`)\n` +
-        `**Sebep:** ${reason}\n\n` +
-        `*Kullanıcının tüm rolleri geçici olarak alınmış ve sadece Cezalı rolü tanımlanmıştır.*`
+        `**Sebep:** ${reason}\n` +
+        `🛡️ **Yetkili İcraat Ödülü:** **+20 Yetkili Puanı** *(Toplam Puan: ${staffProfile.staff.points})*` +
+        (staffResult.promoted ? `\n🎉 **TERFİ:** ${member} yeni kademeye yükseldi: **${staffResult.newRank.name}**!` : '') +
+        `\n\n*Kullanıcının tüm rolleri geçici olarak alınmış ve sadece Cezalı rolü tanımlanmıştır.*`
       )
       .setFooter({ text: 'Asgard Güvenlik & Ceza Sistemi', iconURL: guild.iconURL() })
       .setTimestamp();

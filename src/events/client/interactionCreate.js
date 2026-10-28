@@ -146,22 +146,25 @@ module.exports = {
         const UserProfile = require('../../models/UserProfile');
         const { RankManager } = require('../../utils/rankManager');
 
+        const settings = await GuildSettings.findOne({ guildId: interaction.guildId });
         let profile = await UserProfile.findOne({ guildId: interaction.guildId, userId: targetUserId });
         if (!profile) {
           profile = new UserProfile({ guildId: interaction.guildId, userId: targetUserId });
         }
 
-        const currentRank = RankManager.getRankByLevel(profile.currentRank);
-        const progress = RankManager.getNextRankProgress(profile.currentRank, profile.weekly);
+        const staffRankNum = RankManager.detectMemberStaffRank(targetMember, settings, profile);
+        const currentRank = RankManager.getRankByLevel(staffRankNum);
+        const staffStats = profile.staff || { points: 0, registrations: 0, punishments: 0, voiceMinutes: 0 };
+        const progress = RankManager.getStaffPromotionProgress(staffRankNum, staffStats);
         const progressBar = RankManager.createProgressBar(progress.progressPercent, 14);
 
         const promoteEmbed = new EmbedBuilder()
           .setColor(0x9b59b6)
-          .setTitle(`🛡️ Yetkili Terfi & Yükselme Raporu: ${targetMember.displayName}`)
+          .setTitle(`🛡️ Yetkili İcraat & Terfi Raporu: ${targetMember.displayName}`)
           .setThumbnail(targetMember.user.displayAvatarURL({ dynamic: true }))
           .setDescription(
-            `Asgard Yönetim Kadrosu haftalık performans ve terfi durumu aşağıda belirtilmiştir.\n` +
-            `Yetkili kademeleri haftalık aktifliğe (sohbet, ses, XP) ve yönetim kurulu değerlendirmesine göre yükseltilir.`
+            `Asgard Yönetim Kadrosu terfi sistemi **normal seviye (level) sisteminden tamamen bağımsızdır**.\n` +
+            `Yetkililer; **üye kaydı**, **moderasyon işlemleri (jail/mute)**, **ses mesaisi** ve **yönetim ödül puanları** ile yükselir!`
           )
           .addFields(
             {
@@ -171,15 +174,17 @@ module.exports = {
               inline: false
             },
             {
-              name: '📊 Bu Haftaki Yönetim Performansı',
-              value: `💬 **Mesaj:** \`${profile.weekly.messages}\` adet\n` +
-                `🎙️ **Ses:** \`${profile.weekly.voiceMinutes}\` dakika\n` +
-                `⚡ **Haftalık XP:** \`${profile.weekly.xp.toLocaleString()}\` XP`,
+              name: '📊 Yetkili İcraat Tablosu',
+              value:
+                `⭐ **Yetkili Puanı:** \`${staffStats.points || 0} Puan\`\n` +
+                `📝 **Kayıt İcraatı:** \`${staffStats.registrations || 0} Üye\` *(+15 Puan/Kayıt)*\n` +
+                `🔨 **Ceza İşlemi:** \`${staffStats.punishments || 0} İşlem\` *(+20 Puan/Ceza)*\n` +
+                `🎙️ **Ses Mesaisi:** \`${staffStats.voiceMinutes || 0} Dakika\` *(+10 Puan/5dk)*`,
               inline: true
             },
             {
               name: '📈 Terfi İlerleme Oranı',
-              value: `${progressBar}\n**Başarı:** %${progress.progressPercent}`,
+              value: `${progressBar}\n**Genel Tamamlama:** %${progress.progressPercent}`,
               inline: true
             }
           );
@@ -191,37 +196,40 @@ module.exports = {
             inline: false
           });
         } else {
-          const isReady = progress.progressPercent >= 100;
+          const isReady = progress.neededPoints <= 0;
           promoteEmbed.addFields(
             {
               name: `🎯 Sıradaki Yönetim Kademesi: ${progress.nextRank.name}`,
-              value: `Yükseldiğinizde kazanacağınız yeni yetkiler:\n` +
+              value: `Yükseldiğinizde açılacak yeni yönetim yetkileri:\n` +
                 progress.nextRank.perks.map(p => `✨ ${p}`).join('\n'),
               inline: false
             },
             {
-              name: isReady ? '🎉 Terfi Durumu: HAZIR!' : '⏳ Terfi İçin Kalan Eksikler',
+              name: isReady ? '🎉 Terfi Durumu: ŞARTLAR TAMAMLANDI!' : '⏳ Bir Üst Kademeye Terfi İçin Gerekenler',
               value: isReady
-                ? `✅ **Tebrikler!** Bu haftaki tüm terfi şartlarını tamamladınız.\n` +
-                  `Haftalık değerlendirmede veya üst yöneticiniz \`/yetki-ver\` onayı verdiğinde terfiniz gerçekleşir!`
-                : `Bir sonraki kademeye terfi edebilmek için:\n` +
-                  `• **${progress.neededMessages}** mesaj daha yazmalısınız.\n` +
-                  `• **${progress.neededVoiceMinutes}** dakika daha ses odalarında aktif olmalısınız.\n` +
-                  `• **${progress.neededXp.toLocaleString()}** XP daha kazanmalısınız.`,
+                ? `✅ **Tebrikler!** Gerekli Yetkili Puanına ulaştınız! Bir sonraki icraatınızda veya \`!ypuan terfi\` komutuyla otomatik terfi alacaksınız.`
+                : `**${progress.nextRank.name}** kademesine yükselmek için hedefler:\n` +
+                  `• ⭐ **Yetkili Puanı:** \`${staffStats.points || 0} / ${progress.nextRank.requiredPoints}\` *(Kalan: **${progress.neededPoints} Puan**)*\n` +
+                  `• 📝 **Önerilen Kayıt:** \`${staffStats.registrations || 0} / ${progress.nextRank.requiredRegistrations}\` üye\n` +
+                  `• 🔨 **Önerilen Moderasyon:** \`${staffStats.punishments || 0} / ${progress.nextRank.requiredPunishments}\` işlem\n` +
+                  `• 🎙️ **Önerilen Ses Mesaisi:** \`${staffStats.voiceMinutes || 0} / ${progress.nextRank.requiredVoiceMinutes}\` dk`,
               inline: false
             }
           );
         }
 
         promoteEmbed.addFields({
-          name: '📅 Terfi & Değerlendirme Zamanı',
-          value: `• **Haftalık Değerlendirme:** Her **Pazar gecesi 23:59'da** yetkili kadrosunun aktifliği kontrol edilir ve uygun yetkililer terfi ettirilir.\n` +
-            `• **Erken Terfi:** Hedeflerini erkenden bitiren yetkililer, üst yönetimden \`/yetki-ver\` talebi isteyerek erken terfi alabilir.`,
+          name: '💡 Nasıl Hızlı Terfi Alırım?',
+          value:
+            `• Yeni gelen üyeleri **\`!kayit @üye İsim\`** ile kaydet (**+15 Puan**).\n` +
+            `• Kural ihlali yapanlara **\`!timeout\`** veya **\`!jail\`** uygula (**+20 Puan**).\n` +
+            `• Sesli odalarda mesai yap (**5 dk = +10 Puan**).\n` +
+            `• Üst yöneticilerden başarılı görevlerin için **\`!ypuan ekle\`** ödülü al!`,
           inline: false
         });
 
         promoteEmbed.setFooter({
-          text: 'Asgard Yönetim Kurulu • Performans & Terfi Takip Sistemi',
+          text: 'Asgard Yönetim Kurulu • Yetkili Kariyer & İcraat Sistemi',
           iconURL: interaction.guild.iconURL()
         }).setTimestamp();
 

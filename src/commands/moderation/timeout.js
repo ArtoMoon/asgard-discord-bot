@@ -1,8 +1,10 @@
 const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
 const ms = require('ms');
 const GuildSettings = require('../../models/GuildSettings');
+const UserProfile = require('../../models/UserProfile');
 const Logger = require('../../utils/logger');
 const config = require('../../config');
+const { RankManager } = require('../../utils/rankManager');
 
 module.exports = {
   name: 'timeout',
@@ -79,6 +81,15 @@ module.exports = {
 
       const settings = await GuildSettings.findOne({ guildId: guild.id });
 
+      // Yetkiliye +20 Yetkili Puanı ve +1 Moderasyon İcraatı ekle
+      let staffProfile = await UserProfile.findOne({ guildId: guild.id, userId: member.id });
+      if (!staffProfile) {
+        staffProfile = new UserProfile({ guildId: guild.id, userId: member.id });
+      }
+      if (!staffProfile.staff) staffProfile.staff = { isStaff: true, rank: 1, points: 0, registrations: 0, punishments: 0, voiceMinutes: 0, messages: 0, bonusPoints: 0 };
+      staffProfile.staff.isStaff = true;
+      const staffResult = await RankManager.addStaffAction(guild, member, staffProfile, settings, 'PUNISH');
+
       const timeoutEmbed = new EmbedBuilder()
         .setColor(config.colors.warning)
         .setTitle('🔇 [ZAMANAŞIMI] Kullanıcı Susturuldu')
@@ -87,7 +98,9 @@ module.exports = {
           `**Yetkili:** ${member} (\`${member.user.tag}\`)\n` +
           `**Süre:** \`${durationString}\`\n` +
           `**Bitiş Zamanı:** <t:${Math.floor((Date.now() + durationMs) / 1000)}:R>\n` +
-          `**Sebep:** ${reason}`
+          `**Sebep:** ${reason}\n` +
+          `🛡️ **Yetkili İcraat Ödülü:** **+20 Yetkili Puanı** *(Toplam Puan: ${staffProfile.staff.points})*` +
+          (staffResult.promoted ? `\n🎉 **TERFİ:** ${member} yeni kademeye yükseldi: **${staffResult.newRank.name}**!` : '')
         )
         .setFooter({ text: 'Asgard Güvenlik & Moderasyon Sistemi', iconURL: guild.iconURL() })
         .setTimestamp();

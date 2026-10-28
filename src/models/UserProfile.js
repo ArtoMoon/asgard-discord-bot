@@ -13,6 +13,18 @@ const UserProfileSchema = new mongoose.Schema({
   // Current Level Milestone (10, 20, 30, 40, 50)
   currentRank: { type: Number, default: 1 },
 
+  // Dedicated Staff / Yetkili Career & Promotion Stats (Level'den tamamen bağımsız!)
+  staff: {
+    isStaff: { type: Boolean, default: false },
+    rank: { type: Number, default: 1 }, // 1 to 10 (Thrall -> Odin's Champion)
+    points: { type: Number, default: 0 }, // Yetkili İcraat Puanı
+    registrations: { type: Number, default: 0 }, // Yaptığı kayıt sayısı (!kayit)
+    punishments: { type: Number, default: 0 }, // Uyguladığı ceza sayısı (!jail, !timeout)
+    voiceMinutes: { type: Number, default: 0 }, // Yetkili ses mesaisi (dakika)
+    messages: { type: Number, default: 0 }, // Yetkili sohbet denetim mesajı
+    bonusPoints: { type: Number, default: 0 } // Üst yönetim tarafından verilen ödül/ceza puanı
+  },
+
   // Weekly Stats (resets periodically or rolling)
   weekly: {
     messages: { type: Number, default: 0 },

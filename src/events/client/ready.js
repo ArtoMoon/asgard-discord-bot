@@ -66,6 +66,11 @@ module.exports = {
                 const newLevel = RankManager.calculateLevel(profile.totalXp);
                 profile.level = newLevel;
 
+                // Eğer kullanıcı yetkili kadrosundaysa ses mesaisi için +10 Yetkili Puanı ekle ve terfi kontrolü yap
+                if (RankManager.isMemberStaff(member, settings, profile)) {
+                  await RankManager.addStaffAction(guild, member, profile, settings, 'VOICE');
+                }
+
                 // Check milestone rank up
                 if (newLevel > oldLevel) {
                   const oldMilestone = RankManager.getHighestMilestoneReached(oldLevel);
