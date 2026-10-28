@@ -54,7 +54,7 @@ module.exports = {
           Logger.error('[Geçici Oda] Botun "Üyeleri Taşı (Move Members)" yetkisi YOK!');
         }
 
-        const newChannel = await guild.channels.create({1
+        const newChannel = await guild.channels.create({
           name: `🔊・${member.displayName}'in Odası`,
           type: ChannelType.GuildVoice,
           parent: categoryId || undefined,
