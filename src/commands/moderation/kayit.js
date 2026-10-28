@@ -7,11 +7,11 @@ const { RankManager } = require('../../utils/rankManager');
 
 module.exports = {
   name: 'kayit',
-  aliases: ['register', 'k'],
-  description: 'Yeni gelen bir üyeyi sunucuya kaydeder, ismini düzenler ve temel rütbe rolünü verir.',
+  aliases: ['register', 'k', 'e', 'kız', 'erkek'],
+  description: 'Yeni gelen bir üyeyi sunucuya "İsim | Yaş" formatında kaydeder ve üye rolünü verir.',
   data: new SlashCommandBuilder()
     .setName('kayit')
-    .setDescription('Yeni bir üyeyi Asgard diyarına kaydeder.')
+    .setDescription('Yeni bir üyeyi "İsim | Yaş" formatında Asgard diyarına kaydeder.')
     .addUserOption(opt =>
       opt.setName('kullanici')
         .setDescription('Kayıt edilecek kullanıcı')
@@ -19,7 +19,12 @@ module.exports = {
     )
     .addStringOption(opt =>
       opt.setName('isim')
-        .setDescription('Kullanıcının kaydedilecek ismi')
+        .setDescription('Kullanıcının ismi')
+        .setRequired(true)
+    )
+    .addStringOption(opt =>
+      opt.setName('yas')
+        .setDescription('Kullanıcının yaşı')
         .setRequired(true)
     )
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageNicknames),
@@ -42,20 +47,32 @@ module.exports = {
     }
 
     let targetMember = null;
-    let newName = '';
+    let rawName = '';
+    let rawAge = '';
 
     if (isSlash) {
       const targetUser = interaction.options.getUser('kullanici');
-      newName = interaction.options.getString('isim').trim();
+      rawName = interaction.options.getString('isim').trim();
+      rawAge = interaction.options.getString('yas').trim();
       targetMember = await guild.members.fetch(targetUser.id).catch(() => null);
     } else {
-      if (!args[0] || !args[1]) {
-        return reply({ content: '❌ **Kullanım:** `!kayit @kullanıcı [İsim]`' });
+      if (!args[0] || !args[1] || !args[2]) {
+        return reply({
+          content: `❌ **Eksik Argüman!** Doğru kullanım:\n\`${settings.prefix || '!'}kayit @kullanıcı [İsim] [Yaş]\` *(Örn: \`${settings.prefix || '!'}kayit @üye Ahmet 21\`)*`
+        });
       }
 
       const targetId = args[0].replace(/[<@!>]/g, '');
       targetMember = await guild.members.fetch(targetId).catch(() => null);
-      newName = args.slice(1).join(' ').trim();
+
+      // Son argüman yaş, aradakiler isim (Örn: !kayit @üye Mehmet Ali 22 -> Mehmet Ali | 22)
+      const cleanedArgs = args.slice(1).filter(a => a !== '|');
+      if (cleanedArgs.length >= 2) {
+        rawAge = cleanedArgs[cleanedArgs.length - 1];
+        rawName = cleanedArgs.slice(0, -1).join(' ');
+      } else {
+        rawName = cleanedArgs[0] || '';
+      }
     }
 
     if (!targetMember) {
@@ -66,8 +83,15 @@ module.exports = {
       return reply({ content: '❌ Botlar kayıt edilemez!', ephemeral: true });
     }
 
-    // Format nickname: [İsim] | Asgard
-    const formattedNick = `${newName} | Asgard`;
+    // İsmin baş harflerini büyüt (Örn: ahmet -> Ahmet)
+    const capitalizedName = rawName
+      .split(' ')
+      .filter(Boolean)
+      .map(w => w.charAt(0).toLocaleUpperCase('tr-TR') + w.slice(1).toLocaleLowerCase('tr-TR'))
+      .join(' ');
+
+    // Format nickname: İsim | Yaş
+    const formattedNick = rawAge ? `${capitalizedName} | ${rawAge}` : capitalizedName;
 
     try {
       // 1. Change nickname

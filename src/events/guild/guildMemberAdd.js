@@ -42,10 +42,10 @@ module.exports = {
             .setDescription(`Selamlar ${member}, **Asgard Diyarı**'na hoş geldin!\n\n` +
               `📜 **Kayıt ve Giriş Rehberi:**\n` +
               `• Sunucumuzdaki metin ve ses kanallarına erişebilmek için kayıt olmalısın.\n` +
-              `• Kayıt işlemi için **\`${prefix}kayit [İsim]\`** veya **\`/kayit [isim]\`** komutunu kullanabilirsin.\n` +
-              `• Yetkililerimiz müsait olduğunda kaydını onaylayacaktır.\n\n` +
-              `🛡️ **Asgard Rütbe Sistemi:**\n` +
-              `• Ses kanallarında vakit geçirerek ve sohbette aktif olarak **10 Asgard Rütbesi**'nde yükselebilir, özel GIF, sticker, bağlantı ve yayın yetkileri kazanabilirsin!\n\n` +
+              `• Kayıt işlemi için yetkililerimiz **\`${prefix}kayit @üye [İsim] [Yaş]\`** veya **\`/kayit\`** komutunu kullanarak ismini **\`İsim | Yaş\`** formatında kaydedecektir.\n` +
+              `• Kayıt kanalına **İsim ve Yaş** bilgini yazarak yetkililerimizi bekleyebilirsin.\n\n` +
+              `⭐ **Asgard Seviye & İzin Sistemi:**\n` +
+              `• Ses kanallarında vakit geçirerek ve sohbette aktif olarak **Seviye 10, 20, 30, 40 ve 50**'ye ulaşabilir; özel GIF, sticker, görsel, link ve 1080p yayın yetkileri kazanabilirsin!\n\n` +
               `👤 **Hesap Kurulum Tarihi:** <t:${createdAt}:R>\n` +
               `👥 **Toplam Üye Sayımız:** **${member.guild.memberCount}**`)
             .setThumbnail(member.user.displayAvatarURL({ dynamic: true, size: 256 }))

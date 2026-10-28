@@ -32,10 +32,10 @@ module.exports = {
         {
           name: '🛡️ Kayıt ve Moderasyon Komutları',
           value:
-            `• **\`/kayit\`** veya **\`${prefix}kayit\`** \`<üye> <isim>\` → Yeni üyeyi kaydeder, ismini düzenler ve rütbe rolünü verir.\n` +
-            `• **\`/jail\`** veya **\`${prefix}jail\`** \`<üye> [sebep]\` → Kullanıcının tüm rollerini alıp cezalıya atar.\n` +
+            `• **\`/kayit\`** veya **\`${prefix}kayit\`** \`<üye> <isim> <yaş>\` → Üyeyi **\`İsim | Yaş\`** formatında kaydeder ve üye rolünü verir *(+15 Yetkili Puanı)*.\n` +
+            `• **\`/jail\`** veya **\`${prefix}jail\`** \`<üye> [sebep]\` → Kullanıcının tüm rollerini alıp cezalıya atar *(+20 Yetkili Puanı)*.\n` +
             `• **\`/unjail\`** veya **\`${prefix}unjail\`** \`<üye>\` → Kullanıcının cezasını kaldırıp eski rollerini iade eder.\n` +
-            `• **\`/timeout\`** veya **\`${prefix}timeout\`** \`<üye> <süre> [sebep]\` → Kullanıcıya zamanaşımı (susturma) uygular.`
+            `• **\`/timeout\`** veya **\`${prefix}timeout\`** \`<üye> <süre> [sebep]\` → Kullanıcıya zamanaşımı (susturma) uygular *(+20 Yetkili Puanı)*.\n`
         },
         {
           name: '👑 Yönetici & Yetkili Kariyer Komutları',
