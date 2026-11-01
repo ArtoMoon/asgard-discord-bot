@@ -297,6 +297,44 @@ class RankManager {
   }
 
   /**
+   * Haftalık istatistiklere göre erişilen en yüksek rütbeyi hesaplar.
+   * Eski profillerde bulunmayan görev istatistikleri bu kontrolün dışında bırakılır.
+   */
+  static calculateEligibleRank(stats = {}) {
+    const values = {
+      points: stats.points ?? stats.xp ?? 0,
+      registrations: stats.registrations,
+      punishments: stats.punishments,
+      voiceMinutes: stats.voiceMinutes ?? 0,
+      weeklyXp: stats.xp ?? stats.weeklyXp ?? 0,
+      messages: stats.messages ?? 0
+    };
+
+    let eligibleRank = ASGARD_RANKS[0];
+    for (const rank of ASGARD_RANKS) {
+      const requirements = [
+        values.points >= rank.requiredPoints,
+        values.weeklyXp >= (rank.requiredWeeklyXp || 0),
+        values.voiceMinutes >= rank.requiredVoiceMinutes,
+        values.messages >= rank.requiredMessages
+      ];
+
+      if (values.registrations !== undefined && rank.requiredRegistrations > 0) {
+        requirements.push(values.registrations >= rank.requiredRegistrations);
+      }
+      if (values.punishments !== undefined && rank.requiredPunishments > 0) {
+        requirements.push(values.punishments >= rank.requiredPunishments);
+      }
+
+      if (requirements.every(Boolean)) {
+        eligibleRank = rank;
+      }
+    }
+
+    return eligibleRank;
+  }
+
+  /**
    * Kullanıcının yetkili kadrosunda olup olmadığını kontrol eder
    */
   static isMemberStaff(member, settings, profile) {
