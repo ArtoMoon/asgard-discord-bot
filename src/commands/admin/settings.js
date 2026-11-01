@@ -51,16 +51,26 @@ module.exports = {
         .addUserOption(opt => opt.setName('kullanici').setDescription('Developer kullanıcı').setRequired(true))
     )
     .addSubcommand(sub =>
+        sub.setName('guvenli-ekle')
+        .setDescription('Kullanıcıyı rol korumalarında güvenli listeye ekler.')
+        .addUserOption(opt => opt.setName('kullanici').setDescription('Güvenli listeye eklenecek kullanıcı').setRequired(true))
+    )
+    .addSubcommand(sub =>
+        sub.setName('guvenli-cikar')
+        .setDescription('Kullanıcıyı güvenli listeden çıkarır.')
+        .addUserOption(opt => opt.setName('kullanici').setDescription('Güvenli listeden çıkarılacak kullanıcı').setRequired(true))
+    )
+    .addSubcommand(sub =>
+        sub.setName('guvenli-liste')
+        .setDescription('Güvenli listedeki kullanıcıları görüntüler.')
+    )
+    .addSubcommand(sub =>
       sub.setName('prefix')
         .setDescription('Metin komutları için ön eki (prefix) değiştirir.')
         .addStringOption(opt => opt.setName('on-ek').setDescription('Yeni prefix (Örn: !, ., -)').setRequired(true))
     ),
 
   async execute({ client, message, interaction, isSlash, guild, member, user, channel, args, reply }) {
-    if (!member.permissions.has(PermissionFlagsBits.Administrator)) {
-      return reply({ content: '❌ Bu komutu yalnızca **Yönetici (Administrator)** yetkisine sahip kullanıcılar çalıştırabilir!', ephemeral: true });
-    }
-
     let settings = await GuildSettings.findOne({ guildId: guild.id });
     if (!settings) {
       settings = await GuildSettings.create({ guildId: guild.id });
@@ -72,6 +82,18 @@ module.exports = {
       subcommand = interaction.options.getSubcommand();
     } else if (args[0]) {
       subcommand = args[0].toLowerCase();
+    }
+
+    const developerIds = [...(config.developerIds || []), ...(settings.developerUserIds || [])];
+    const isDeveloper = guild.ownerId === member.id || developerIds.includes(member.id);
+    const safeSubcommands = ['guvenli-ekle', 'guvenli-cikar', 'guvenli-liste', 'safe-ekle', 'safe-cikar', 'safe-liste'];
+
+    if (safeSubcommands.includes(subcommand) && !isDeveloper) {
+      return reply({ content: '🛡️ Güvenli liste işlemleri yalnızca **sunucu sahibi** veya **Developer** tarafından yapılabilir!', ephemeral: true });
+    }
+
+    if (!isDeveloper && !member.permissions.has(PermissionFlagsBits.Administrator)) {
+      return reply({ content: '❌ Bu komutu yalnızca **Yönetici (Administrator)** yetkisine sahip kullanıcılar çalıştırabilir!', ephemeral: true });
     }
 
     // 1. GÖRÜNTÜLE
@@ -86,7 +108,8 @@ module.exports = {
           {
             name: '👑 Temel Bilgiler',
             value: `• **Prefix:** \`${settings.prefix || config.defaultPrefix}\`\n` +
-              `• **Developerlar:** ${devList.length > 0 ? devList.map(id => `<@${id}>`).join(', ') : 'Varsayılan yok'}`,
+              `• **Developerlar:** ${devList.length > 0 ? devList.map(id => `<@${id}>`).join(', ') : 'Varsayılan yok'}\n` +
+              `• **Güvenli Liste:** ${settings.safeUserIds?.length > 0 ? settings.safeUserIds.map(id => `<@${id}>`).join(', ') : 'Liste boş'}`,
             inline: false
           },
           {
@@ -187,7 +210,41 @@ module.exports = {
       return reply({ content: `✅ ${targetUser} kullanıcısı yetki taleplerini onaylayabilecek Developer listesine eklendi!` });
     }
 
-    // 9. PREFIX
+    // 9. GÜVENLİ LİSTE EKLE
+    if (['guvenli-ekle', 'safe-ekle'].includes(subcommand)) {
+      const targetUser = isSlash
+        ? interaction.options.getUser('kullanici')
+        : await client.users.fetch(args[1]?.replace(/[<@!>]/g, '')).catch(() => null);
+      if (!targetUser) return reply({ content: '❌ Lütfen geçerli bir kullanıcı belirtin!' });
+
+      if (!settings.safeUserIds.includes(targetUser.id)) {
+        settings.safeUserIds.push(targetUser.id);
+        await settings.save();
+      }
+      return reply({ content: `✅ ${targetUser} güvenli listeye eklendi. Bu kullanıcı görünmezlik korumasından muaf olur.` });
+    }
+
+    // 10. GÜVENLİ LİSTE ÇIKAR
+    if (['guvenli-cikar', 'safe-cikar'].includes(subcommand)) {
+      const targetUser = isSlash
+        ? interaction.options.getUser('kullanici')
+        : await client.users.fetch(args[1]?.replace(/[<@!>]/g, '')).catch(() => null);
+      if (!targetUser) return reply({ content: '❌ Lütfen geçerli bir kullanıcı belirtin!' });
+
+      settings.safeUserIds = settings.safeUserIds.filter(id => id !== targetUser.id);
+      await settings.save();
+      return reply({ content: `✅ ${targetUser} güvenli listeden çıkarıldı.` });
+    }
+
+    // 11. GÜVENLİ LİSTE GÖRÜNTÜLE
+    if (['guvenli-liste', 'safe-liste'].includes(subcommand)) {
+      const safeUsers = settings.safeUserIds?.length > 0
+        ? settings.safeUserIds.map(id => `• <@${id}> (\`${id}\`)`).join('\n')
+        : 'Güvenli liste boş.';
+      return reply({ content: `🛡️ **Güvenli Liste**\n${safeUsers}` });
+    }
+
+    // 12. PREFIX
     if (subcommand === 'prefix') {
       const newPrefix = isSlash ? interaction.options.getString('on-ek') : args[1];
       if (!newPrefix) return reply({ content: '❌ Lütfen yeni prefixi belirtin! Örn: `!`' });

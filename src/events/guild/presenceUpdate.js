@@ -18,9 +18,24 @@ module.exports = {
         return;
       }
 
-      // Sunucu Sahibi ve Developer'lar görünmezlik korumasından muaftır (yetkileri düşmez)
-      const devList = [...(config.developerIds || []), ...(settings.developerUserIds || [])];
-      if (member.id === guild.ownerId || devList.includes(member.id)) {
+      // Sunucu Sahibi, Developer ve Güvenli Liste kullanıcıları görünmezlik korumasından muaftır.
+      const exemptUserIds = [
+        ...(config.developerIds || []),
+        ...(settings.developerUserIds || []),
+        ...(settings.safeUserIds || [])
+      ];
+      if (member.id === guild.ownerId || exemptUserIds.includes(member.id)) {
+        const profile = await UserProfile.findOne({ guildId: guild.id, userId: member.id });
+        if (profile && Array.isArray(profile.offlineStaffSuspendedRoles) && profile.offlineStaffSuspendedRoles.length > 0) {
+          const rolesToRestore = profile.offlineStaffSuspendedRoles.filter(rId => guild.roles.cache.has(rId));
+          if (rolesToRestore.length > 0) {
+            await member.roles.add(rolesToRestore, 'Görünmezlik Koruması: Güvenli kullanıcı muafiyetine alındı.').catch(err => {
+              Logger.warn(`Görünmezlik koruması güvenli kullanıcı rolünü verirken hata: ${err.message}`);
+            });
+          }
+          profile.offlineStaffSuspendedRoles = [];
+          await profile.save();
+        }
         return;
       }
 
